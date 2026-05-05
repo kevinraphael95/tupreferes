@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
   <header class="site-header">
     <div class="header-left"></div>
     <div class="header-center">
@@ -23,36 +22,33 @@
       </button>
     </div>
   </header>
-
   <div class="divider-line"></div>
-
   <main class="main-wrap">
-
     <div class="loader" id="loader">
       <div class="loader-inner">
         <div class="loader-bar"><div class="loader-fill"></div></div>
         <p class="loader-text">Tirage au sort<span class="ellipsis"></span></p>
       </div>
     </div>
-
     <section class="arena" id="arena" aria-live="polite"></section>
 
-    <div class="result-strip" id="resultStrip">
-      <div class="result-inner">
-        <span class="result-label">Tu préfères</span>
-        <strong class="result-winner" id="resultWinner">—</strong>
-        <span class="result-hint" id="resultHint"></span>
+    <!-- Résultat + boutons sur la même ligne -->
+    <div class="action-bar">
+      <div class="result-strip" id="resultStrip">
+        <div class="result-inner">
+          <span class="result-label">Tu préfères</span>
+          <strong class="result-winner" id="resultWinner">—</strong>
+          <span class="result-hint" id="resultHint"></span>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn btn-primary" id="btnNext" disabled>
+          <span>Suivant</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="btn btn-ghost" id="btnReset">Réinitialiser</button>
       </div>
     </div>
-
-    <div class="controls">
-      <button class="btn btn-primary" id="btnNext" disabled>
-        <span>Suivant</span>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <button class="btn btn-ghost" id="btnReset">Réinitialiser</button>
-    </div>
-
   </main>
 
   <!-- Drawer historique -->
@@ -68,7 +64,6 @@
     <ol class="history-list" id="historyList" reversed></ol>
     <p class="history-empty" id="historyEmpty">Aucun choix pour l'instant.</p>
   </aside>
-
   <script src="app.js"></script>
 </body>
 </html>
