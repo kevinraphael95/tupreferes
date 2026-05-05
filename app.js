@@ -19,9 +19,6 @@ let state = {
 /* ── DOM refs ── */
 const $loader          = document.getElementById('loader');
 const $arena           = document.getElementById('arena');
-const $resultStrip     = document.getElementById('resultStrip');
-const $resultWin       = document.getElementById('resultWinner');
-const $resultHint      = document.getElementById('resultHint');
 const $btnNext         = document.getElementById('btnNext');
 const $btnReset        = document.getElementById('btnReset');
 const $histPanel       = document.getElementById('historyPanel');
@@ -100,7 +97,6 @@ async function loadRound() {
   state.chosenIdx = -1;
 
   showLoader(true);
-  clearResult();
   $btnNext.disabled = true;
 
   state.pages = await fetchPair();
@@ -112,12 +108,6 @@ async function loadRound() {
 function showLoader(show) {
   $loader.style.display = show ? 'flex' : 'none';
   $arena.style.display  = show ? 'none' : 'flex';
-}
-
-function clearResult() {
-  $resultStrip.classList.remove('visible');
-  $resultWin.textContent  = '—';
-  $resultHint.textContent = '';
 }
 
 /* ── Card rendering ── */
