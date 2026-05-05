@@ -119,7 +119,7 @@ body::after {
 
 .site-title {
   font-family: var(--font-ui);
-  font-size: clamp(1.4rem, 5vw, 2rem);
+  font-size: clamp(3rem, 11vw, 6rem);
   font-weight: 800;
   letter-spacing: .12em;
   line-height: 1;
@@ -703,7 +703,7 @@ body::after {
 /* ── Responsive ── */
 @media (max-width: 480px) {
   .site-header { padding: 1.5rem 1rem 1rem; }
-  .site-title  { font-size: 1.25rem; }
+  .site-title { font-size: 2.5rem; }
   .issue-tag   { display: none; }
   .card-img, .card-img-placeholder { width: 80px; min-width: 80px; }
   .card-body   { padding: .8rem .9rem; }
