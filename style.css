@@ -116,6 +116,37 @@ body::after {
   gap: .5rem;
 }
 
+/* ── Header mobile : empiler titre + boutons ── */
+@media (max-width: 480px) {
+  .site-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .8rem;
+    padding: 1.2rem 1rem .9rem;
+    position: relative;
+  }
+
+  .header-left { display: none; } /* vide de toute façon */
+
+  .header-center { order: 1; width: 100%; }
+
+  .header-right {
+    order: 2;
+    justify-content: center;
+    gap: .6rem;
+  }
+
+  .site-title {
+    font-size: clamp(2rem, 13vw, 2.6rem);
+    letter-spacing: .06em;
+    white-space: nowrap;
+  }
+
+  .site-subtitle { font-size: .82rem; }
+  .divider-line { margin-bottom: 1.2rem; }
+}
+
 /* ── Boutons icône ── */
 .icon-btn {
   background: var(--tag-bg);
@@ -569,11 +600,6 @@ body::after {
   :root {
     --img-w: 90px;
   }
-
-  .site-header { padding: 1.2rem 1rem .9rem; }
-  .site-title  { font-size: clamp(2rem, 12vw, 2.8rem); letter-spacing: .06em; }
-  .site-subtitle { font-size: .82rem; }
-  .divider-line { margin-bottom: 1.5rem; }
 
   .card { height: 130px; }
 
