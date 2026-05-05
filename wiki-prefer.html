@@ -1,519 +1,83 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tu préfères ...</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #0a0a0f;
-    --card: #0f0f1a;
-    --accent: #e8c97a;
-    --dim: #3a3a5c;
-    --text: #e8e8f0;
-    --sub: #7a7a9a;
-    --vs: #2a2a3f;
-  }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1.5rem 1rem 4rem;
-    overflow-x: hidden;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 60% 40% at 20% 30%, rgba(100,60,200,0.07) 0%, transparent 70%),
-      radial-gradient(ellipse 50% 50% at 80% 70%, rgba(200,100,60,0.06) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  header {
-    text-align: center;
-    margin-bottom: 2rem;
-    animation: fadeDown .6s ease both;
-  }
-
-  header h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(1.8rem, 6vw, 3rem);
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    line-height: 1;
-  }
-
-  header h1 span { color: var(--accent); }
-
-  header p {
-    color: var(--sub);
-    font-size: .7rem;
-    letter-spacing: .15em;
-    text-transform: uppercase;
-    margin-top: .6rem;
-  }
-
-  .arena {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    width: 100%;
-    max-width: 600px;
-  }
-
-  .vs-divider {
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    padding: .4rem 0;
-  }
-
-  .vs-divider::before,
-  .vs-divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--dim);
-  }
-
-  .vs-text {
-    font-family: 'Playfair Display', serif;
-    font-size: .85rem;
-    font-weight: 900;
-    color: var(--sub);
-    letter-spacing: .2em;
-  }
-
-  .card {
-    background: var(--card);
-    border: 1px solid var(--dim);
-    display: flex;
-    flex-direction: row;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition: border-color .25s, opacity .3s, filter .3s, transform .2s;
-    animation: cardIn .5s ease both;
-    min-height: 110px;
-  }
-
-  .card:first-child { border-radius: 16px 16px 0 0; animation-delay: .1s; }
-  .card:last-child  { border-radius: 0 0 16px 16px; animation-delay: .2s; }
-
-  .card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(232,201,122,0.05) 0%, transparent 60%);
-    opacity: 0;
-    transition: opacity .3s;
-    pointer-events: none;
-  }
-
-  .card:not(.loser):hover::before { opacity: 1; }
-  .card:not(.loser):hover { border-color: rgba(232,201,122,.5); }
-
-  .card.winner {
-    border-color: var(--accent) !important;
-    background: linear-gradient(135deg, #1a1a2e 0%, #12121f 100%);
-    animation: winPulse .4s ease;
-    cursor: pointer;
-  }
-
-  .card.loser {
-    opacity: .3;
-    filter: grayscale(.7);
-    cursor: pointer;
-  }
-
-  .card-img {
-    width: 110px;
-    min-width: 110px;
-    object-fit: cover;
-    display: block;
-    border-right: 1px solid var(--dim);
-    background: var(--vs);
-    align-self: stretch;
-  }
-
-  .card-img-placeholder {
-    width: 110px;
-    min-width: 110px;
-    background: var(--vs);
-    border-right: 1px solid var(--dim);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.75rem;
-    color: var(--dim);
-  }
-
-  .card-body {
-    flex: 1;
-    padding: .9rem 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: .4rem;
-    min-width: 0;
-  }
-
-  .card-label {
-    font-size: .58rem;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: var(--accent);
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: .4rem;
-  }
-
-  .winner-badge {
-    color: var(--accent);
-    font-size: .58rem;
-    display: none;
-  }
-
-  .card.winner .winner-badge { display: inline; }
-
-  .card-title {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(.95rem, 3vw, 1.25rem);
-    font-weight: 700;
-    line-height: 1.25;
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .card-snippet {
-    font-size: .68rem;
-    color: var(--sub);
-    line-height: 1.5;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    flex: 1;
-  }
-
-  .card-footer {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-    margin-top: .3rem;
-  }
-
-  .wiki-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: .3rem;
-    font-family: 'DM Mono', monospace;
-    font-size: .58rem;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--bg);
-    background: var(--sub);
-    border: none;
-    border-radius: 5px;
-    padding: .28rem .55rem;
-    cursor: pointer;
-    text-decoration: none;
-    transition: background .2s;
-    white-space: nowrap;
-  }
-
-  .wiki-btn:hover { background: var(--accent); }
-
-  .score-banner {
-    margin-top: 1.25rem;
-    text-align: center;
-    font-size: .72rem;
-    letter-spacing: .12em;
-    color: var(--sub);
-    text-transform: uppercase;
-    min-height: 1.4rem;
-  }
-
-  .score-banner strong { color: var(--accent); font-size: .9rem; }
-
-  .change-hint {
-    text-align: center;
-    font-size: .6rem;
-    color: var(--dim);
-    margin-top: .3rem;
-    min-height: 1rem;
-  }
-
-  .controls {
-    margin-top: 1.25rem;
-    display: flex;
-    gap: .75rem;
-  }
-
-  button {
-    background: transparent;
-    border: 1px solid var(--dim);
-    color: var(--sub);
-    font-family: 'DM Mono', monospace;
-    font-size: .65rem;
-    letter-spacing: .15em;
-    text-transform: uppercase;
-    padding: .65rem 1.4rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all .2s;
-  }
-
-  button:hover { border-color: var(--accent); color: var(--accent); }
-
-  button.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #0a0a0f;
-    font-weight: 500;
-  }
-
-  button.primary:hover { background: #f5dc9a; border-color: #f5dc9a; }
-  button:disabled { opacity: .3; cursor: default; pointer-events: none; }
-
-  .loader {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 240px;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .dots { display: flex; gap: .4rem; }
-
-  .dot {
-    width: 7px; height: 7px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: bounce .7s infinite ease-in-out;
-  }
-
-  .dot:nth-child(2) { animation-delay: .15s; }
-  .dot:nth-child(3) { animation-delay: .3s; }
-
-  .history {
-    margin-top: 2.5rem;
-    width: 100%;
-    max-width: 600px;
-  }
-
-  .history-title {
-    font-size: .6rem;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: var(--dim);
-    margin-bottom: .75rem;
-    border-bottom: 1px solid var(--dim);
-    padding-bottom: .4rem;
-  }
-
-  .history-list { display: flex; flex-direction: column; gap: .35rem; }
-
-  .history-item {
-    display: flex;
-    align-items: center;
-    gap: .6rem;
-    font-size: .65rem;
-    color: var(--sub);
-    padding: .4rem .6rem;
-    border-radius: 6px;
-    background: rgba(255,255,255,.02);
-    animation: fadeUp .3s ease;
-    overflow: hidden;
-  }
-
-  .history-item .wname { color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  .history-item .vs { color: var(--dim); font-size: .55rem; flex-shrink: 0; }
-  .history-item .lname { text-decoration: line-through; opacity: .5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-
-  @keyframes fadeDown { from { opacity:0; transform:translateY(-14px); } to { opacity:1; transform:none; } }
-  @keyframes fadeUp   { from { opacity:0; transform:translateY(8px);   } to { opacity:1; transform:none; } }
-  @keyframes cardIn   { from { opacity:0; transform:translateY(16px);  } to { opacity:1; transform:none; } }
-  @keyframes winPulse { 0%{box-shadow:0 0 0 0 rgba(232,201,122,.4)} 70%{box-shadow:0 0 0 10px rgba(232,201,122,0)} 100%{box-shadow:none} }
-  @keyframes bounce   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tu préfères ?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Syne:wght@400;500;700;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header>
-  <h1>Tu préfères ...</h1>
-</header>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-left">
+      <span class="issue-tag">Édition aléatoire</span>
+    </div>
+    <div class="header-center">
+      <h1 class="site-title">TU PRÉFÈRES</h1>
+      <p class="site-subtitle">Un choix impossible, à chaque fois.</p>
+    </div>
+    <div class="header-right">
+      <button class="theme-toggle" id="themeToggle" aria-label="Changer de thème">
+        <span class="theme-icon-dark">◑</span>
+        <span class="theme-icon-light">◐</span>
+      </button>
+    </div>
+  </header>
 
-<div id="loader" class="loader">
-  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-  <p style="color:var(--sub);font-size:.65rem;letter-spacing:.1em">Chargement…</p>
-</div>
+  <div class="divider-line"></div>
 
-<div id="main" class="arena" style="display:none"></div>
+  <!-- Main arena -->
+  <main class="main-wrap">
 
-<div class="score-banner" id="score"></div>
-<div class="change-hint" id="change-hint"></div>
-
-<div class="controls">
-  <button class="primary" id="btn-next" onclick="nextRound()" disabled>Suivant →</button>
-  <button onclick="reset()">Réinitialiser</button>
-</div>
-
-<div class="history" id="history-section" style="display:none">
-  <div class="history-title">Historique</div>
-  <div class="history-list" id="history-list"></div>
-</div>
-
-<script>
-  const LANG = 'fr';
-  const API = `https://${LANG}.wikipedia.org/api/rest_v1`;
-
-  let chosen = false;
-  let chosenIdx = -1;
-  let history = [];
-  let pages = [null, null];
-
-  async function fetchRandom() {
-    const r = await fetch(`${API}/page/random/summary`);
-    const d = await r.json();
-    return {
-      title: d.title,
-      description: d.description || '',
-      extract: d.extract || '',
-      image: d.thumbnail?.source || null,
-      url: d.content_urls?.desktop?.page || `https://${LANG}.wikipedia.org/wiki/${encodeURIComponent(d.title)}`
-    };
-  }
-
-  async function loadRound() {
-    chosen = false;
-    chosenIdx = -1;
-    document.getElementById('loader').style.display = 'flex';
-    document.getElementById('main').style.display = 'none';
-    document.getElementById('btn-next').disabled = true;
-    document.getElementById('score').textContent = '';
-    document.getElementById('change-hint').textContent = '';
-
-    try {
-      pages = await Promise.all([fetchRandom(), fetchRandom()]);
-    } catch(e) {
-      pages = await Promise.all([fetchRandom(), fetchRandom()]);
-    }
-
-    renderCards();
-  }
-
-  function makeCard(p, i) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.id = `card-${i}`;
-
-    const imgSection = p.image
-      ? `<img class="card-img" src="${p.image}" alt="" loading="lazy"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-         ><div class="card-img-placeholder" style="display:none">📄</div>`
-      : `<div class="card-img-placeholder">📄</div>`;
-
-    const snippet = p.description || p.extract;
-
-    card.innerHTML = `
-      ${imgSection}
-      <div class="card-body">
-        <div class="card-label">
-          ${i === 0 ? 'Option A' : 'Option B'}
-          <span class="winner-badge">✓ Choisi</span>
-        </div>
-        <div class="card-title">${p.title}</div>
-        ${snippet ? `<div class="card-snippet">${snippet}</div>` : ''}
-        <div class="card-footer">
-          <a class="wiki-btn" href="${p.url}" target="_blank" rel="noopener"
-             onclick="event.stopPropagation()">↗ Wikipedia</a>
-        </div>
+    <!-- Loader -->
+    <div class="loader" id="loader">
+      <div class="loader-inner">
+        <div class="loader-bar"><div class="loader-fill"></div></div>
+        <p class="loader-text">Tirage au sort<span class="ellipsis"></span></p>
       </div>
-    `;
+    </div>
 
-    card.addEventListener('click', () => choose(i));
-    return card;
-  }
+    <!-- Cards arena -->
+    <section class="arena" id="arena" aria-live="polite">
+      <!-- injected by JS -->
+    </section>
 
-  function renderCards() {
-    const main = document.getElementById('main');
-    main.innerHTML = '';
-    main.appendChild(makeCard(pages[0], 0));
-    const vs = document.createElement('div');
-    vs.className = 'vs-divider';
-    vs.innerHTML = `<span class="vs-text">VS</span>`;
-    main.appendChild(vs);
-    main.appendChild(makeCard(pages[1], 1));
-    document.getElementById('loader').style.display = 'none';
-    document.getElementById('main').style.display = 'flex';
-  }
+    <!-- Result strip -->
+    <div class="result-strip" id="resultStrip">
+      <div class="result-inner">
+        <span class="result-label">Tu préfères</span>
+        <strong class="result-winner" id="resultWinner">—</strong>
+        <span class="result-hint" id="resultHint"></span>
+      </div>
+    </div>
 
-  function choose(idx) {
-    const wasChosen = chosen;
-    if (wasChosen && chosenIdx === idx) return; // tap same — no-op
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn btn-primary" id="btnNext" disabled>
+        <span>Suivant</span>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="btn btn-ghost" id="btnReset">Réinitialiser</button>
+    </div>
 
-    chosen = true;
-    chosenIdx = idx;
+  </main>
 
-    const c0 = document.getElementById('card-0');
-    const c1 = document.getElementById('card-1');
-    const winner = idx === 0 ? c0 : c1;
-    const loser  = idx === 0 ? c1 : c0;
+  <!-- History panel -->
+  <aside class="history-panel" id="historyPanel" aria-label="Historique des choix">
+    <div class="history-header">
+      <span class="history-label">Historique</span>
+      <span class="history-count" id="historyCount">0 choix</span>
+    </div>
+    <ol class="history-list" id="historyList" reversed></ol>
+  </aside>
 
-    winner.classList.add('winner');
-    winner.classList.remove('loser');
-    loser.classList.add('loser');
-    loser.classList.remove('winner');
+  <footer class="site-footer">
+    <span>Données Wikipedia · Licence CC BY-SA</span>
+  </footer>
 
-    document.getElementById('btn-next').disabled = false;
-    document.getElementById('score').innerHTML = `Tu préfères <strong>${pages[idx].title}</strong>`;
-    document.getElementById('change-hint').textContent = 'Tape l\'autre carte pour changer d\'avis';
-
-    if (!wasChosen) {
-      history.unshift({ winner: pages[idx].title, loser: pages[1-idx].title });
-    } else {
-      history[0] = { winner: pages[idx].title, loser: pages[1-idx].title };
-    }
-    renderHistory();
-  }
-
-  function renderHistory() {
-    if (!history.length) return;
-    document.getElementById('history-section').style.display = 'block';
-    document.getElementById('history-list').innerHTML = history.slice(0, 10).map((h, i) =>
-      `<div class="history-item">
-        <span style="color:var(--dim);font-size:.55rem;flex-shrink:0">#${history.length - i}</span>
-        <span class="wname">${h.winner}</span>
-        <span class="vs">ou</span>
-        <span class="lname">${h.loser}</span>
-      </div>`
-    ).join('');
-  }
-
-  function nextRound() { if (chosen) loadRound(); }
-
-  function reset() {
-    history = [];
-    document.getElementById('history-section').style.display = 'none';
-    loadRound();
-  }
-
-  loadRound();
-</script>
+  <script src="app.js"></script>
 </body>
 </html>
