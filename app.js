@@ -128,7 +128,7 @@ function renderArena() {
 
   const vsDivider = document.createElement('div');
   vsDivider.className = 'vs-divider';
-  vsDivider.innerHTML = `<div class="vs-pill">VS</div>`;
+  vsDivider.innerHTML = `<div class="vs-pill">OU</div>`;
   $arena.appendChild(vsDivider);
 
   $arena.appendChild(buildCard(state.pages[1], 1));
