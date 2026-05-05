@@ -10,17 +10,15 @@
 </head>
 <body>
 
-  <!-- Header -->
   <header class="site-header">
-    <div class="header-left">
-      <span class="issue-tag">Édition aléatoire</span>
-    </div>
+    <div class="header-left"></div>
     <div class="header-center">
       <h1 class="site-title">TU PRÉFÈRES</h1>
       <p class="site-subtitle">Un choix impossible, à chaque fois.</p>
     </div>
     <div class="header-right">
-      <button class="theme-toggle" id="themeToggle" aria-label="Changer de thème">
+      <button class="icon-btn" id="btnHistoryToggle" aria-label="Voir l'historique" title="Historique">?</button>
+      <button class="icon-btn theme-toggle" id="themeToggle" aria-label="Changer de thème">
         <span class="theme-icon-dark">◑</span>
         <span class="theme-icon-light">◐</span>
       </button>
@@ -29,10 +27,8 @@
 
   <div class="divider-line"></div>
 
-  <!-- Main arena -->
   <main class="main-wrap">
 
-    <!-- Loader -->
     <div class="loader" id="loader">
       <div class="loader-inner">
         <div class="loader-bar"><div class="loader-fill"></div></div>
@@ -40,12 +36,8 @@
       </div>
     </div>
 
-    <!-- Cards arena -->
-    <section class="arena" id="arena" aria-live="polite">
-      <!-- injected by JS -->
-    </section>
+    <section class="arena" id="arena" aria-live="polite"></section>
 
-    <!-- Result strip -->
     <div class="result-strip" id="resultStrip">
       <div class="result-inner">
         <span class="result-label">Tu préfères</span>
@@ -54,7 +46,6 @@
       </div>
     </div>
 
-    <!-- Controls -->
     <div class="controls">
       <button class="btn btn-primary" id="btnNext" disabled>
         <span>Suivant</span>
@@ -65,13 +56,18 @@
 
   </main>
 
-  <!-- History panel -->
-  <aside class="history-panel" id="historyPanel" aria-label="Historique des choix">
-    <div class="history-header">
+  <!-- Drawer historique -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <aside class="history-drawer" id="historyPanel" aria-hidden="true">
+    <div class="history-drawer-header">
       <span class="history-label">Historique</span>
-      <span class="history-count" id="historyCount">0 choix</span>
+      <div class="history-drawer-meta">
+        <span class="history-count" id="historyCount">0 choix</span>
+        <button class="icon-btn" id="btnHistoryClose" aria-label="Fermer">✕</button>
+      </div>
     </div>
     <ol class="history-list" id="historyList" reversed></ol>
+    <p class="history-empty" id="historyEmpty">Aucun choix pour l'instant.</p>
   </aside>
 
   <footer class="site-footer">
