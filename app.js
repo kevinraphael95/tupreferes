@@ -183,10 +183,6 @@ function choose(idx) {
   loser.classList.add('loser');
   loser.classList.remove('winner');
 
-  $resultStrip.classList.add('visible');
-  $resultWin.textContent  = state.pages[idx].title;
-  $resultHint.textContent = alreadyChosen ? 'Choix modifié !' : 'Tape l\'autre carte pour changer d\'avis';
-
   $btnNext.disabled = false;
 
   if (!alreadyChosen) {
