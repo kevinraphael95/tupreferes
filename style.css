@@ -32,7 +32,7 @@ a { text-decoration: none; color: inherit; }
   --drawer-bg:    #2c2c33;
 
   /* Tailles image */
-  --img-w:        120px;
+  --img-w: 150px;
   --img-h:        160px;
 }
 
