@@ -17,17 +17,21 @@ let state = {
 };
 
 /* ── DOM refs ── */
-const $loader      = document.getElementById('loader');
-const $arena       = document.getElementById('arena');
-const $resultStrip = document.getElementById('resultStrip');
-const $resultWin   = document.getElementById('resultWinner');
-const $resultHint  = document.getElementById('resultHint');
-const $btnNext     = document.getElementById('btnNext');
-const $btnReset    = document.getElementById('btnReset');
-const $histPanel   = document.getElementById('historyPanel');
-const $histList    = document.getElementById('historyList');
-const $histCount   = document.getElementById('historyCount');
-const $themeBtn    = document.getElementById('themeToggle');
+const $loader          = document.getElementById('loader');
+const $arena           = document.getElementById('arena');
+const $resultStrip     = document.getElementById('resultStrip');
+const $resultWin       = document.getElementById('resultWinner');
+const $resultHint      = document.getElementById('resultHint');
+const $btnNext         = document.getElementById('btnNext');
+const $btnReset        = document.getElementById('btnReset');
+const $histPanel       = document.getElementById('historyPanel');
+const $histList        = document.getElementById('historyList');
+const $histCount       = document.getElementById('historyCount');
+const $histEmpty       = document.getElementById('historyEmpty');
+const $themeBtn        = document.getElementById('themeToggle');
+const $histToggleBtn   = document.getElementById('btnHistoryToggle');
+const $histCloseBtn    = document.getElementById('btnHistoryClose');
+const $drawerOverlay   = document.getElementById('drawerOverlay');
 
 /* ── Theme ── */
 (function initTheme() {
@@ -41,6 +45,27 @@ $themeBtn.addEventListener('click', () => {
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('tp-theme', next);
+});
+
+/* ── Drawer historique ── */
+function openDrawer() {
+  $histPanel.classList.add('open');
+  $histPanel.setAttribute('aria-hidden', 'false');
+  $drawerOverlay.classList.add('visible');
+}
+
+function closeDrawer() {
+  $histPanel.classList.remove('open');
+  $histPanel.setAttribute('aria-hidden', 'true');
+  $drawerOverlay.classList.remove('visible');
+}
+
+$histToggleBtn.addEventListener('click', openDrawer);
+$histCloseBtn.addEventListener('click', closeDrawer);
+$drawerOverlay.addEventListener('click', closeDrawer);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDrawer();
 });
 
 /* ── Wikipedia fetch ── */
@@ -71,7 +96,6 @@ async function fetchPair() {
 
 /* ── Round management ── */
 async function loadRound() {
-  // Reset UI
   state.chosen    = false;
   state.chosenIdx = -1;
 
@@ -118,15 +142,13 @@ function buildCard(page, idx) {
   card.setAttribute('tabindex', '0');
   card.setAttribute('aria-label', `Choisir : ${page.title}`);
 
-  const imgHTML = page.image
-    ? `<img class="card-img" src="${page.image}" alt="${escapeHtml(page.title)}" loading="lazy"
-           onerror="this.replaceWith(makePlaceholder())">`
-    : `<div class="card-img-placeholder">📄</div>`;
-
   const snippet = page.description || page.extract.slice(0, 160);
 
   card.innerHTML = `
-    ${imgHTML}
+    ${page.image
+      ? `<img class="card-img" src="${page.image}" alt="${escapeHtml(page.title)}" loading="lazy">`
+      : `<div class="card-img-placeholder">📄</div>`
+    }
     <div class="card-body">
       <div class="card-option">
         <span class="option-badge">
@@ -145,7 +167,6 @@ function buildCard(page, idx) {
     </div>
   `;
 
-  // Click & keyboard
   card.addEventListener('click', () => choose(idx));
   card.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(idx); }
@@ -157,9 +178,8 @@ function buildCard(page, idx) {
 /* ── Choice logic ── */
 function choose(idx) {
   const alreadyChosen = state.chosen;
-  if (alreadyChosen && state.chosenIdx === idx) return; // same card — no-op
+  if (alreadyChosen && state.chosenIdx === idx) return;
 
-  const prevIdx  = state.chosenIdx;
   state.chosen    = true;
   state.chosenIdx = idx;
 
@@ -168,29 +188,23 @@ function choose(idx) {
   const winner = idx === 0 ? cardA : cardB;
   const loser  = idx === 0 ? cardB : cardA;
 
-  // Flip classes
   winner.classList.add('winner');
   winner.classList.remove('loser');
   loser.classList.add('loser');
   loser.classList.remove('winner');
 
-  // Result strip
   $resultStrip.classList.add('visible');
   $resultWin.textContent  = state.pages[idx].title;
   $resultHint.textContent = alreadyChosen ? 'Choix modifié !' : 'Tape l\'autre carte pour changer d\'avis';
 
-  // Enable next
   $btnNext.disabled = false;
 
-  // History
   if (!alreadyChosen) {
-    // New choice
     state.history.unshift({
       winner: state.pages[idx].title,
       loser:  state.pages[1 - idx].title,
     });
   } else {
-    // Changed mind — update top entry
     state.history[0] = {
       winner: state.pages[idx].title,
       loser:  state.pages[1 - idx].title,
@@ -203,12 +217,14 @@ function choose(idx) {
 /* ── History rendering ── */
 function renderHistory() {
   const h = state.history;
-  if (!h.length) return;
 
-  $histPanel.classList.add('visible');
+  // Mettre à jour le compteur
   $histCount.textContent = `${h.length} choix`;
 
-  $histList.innerHTML = h.slice(0, 12).map((entry, i) => `
+  // Cacher/montrer l'état vide
+  if ($histEmpty) $histEmpty.style.display = h.length ? 'none' : 'block';
+
+  $histList.innerHTML = h.slice(0, 50).map((entry, i) => `
     <li class="history-item">
       <span class="h-num">${h.length - i}</span>
       <span class="h-winner">${escapeHtml(entry.winner)}</span>
@@ -225,13 +241,13 @@ $btnNext.addEventListener('click', () => {
 
 $btnReset.addEventListener('click', () => {
   state.history = [];
-  $histPanel.classList.remove('visible');
-  $histList.innerHTML = '';
   $histCount.textContent = '0 choix';
+  $histList.innerHTML = '';
+  if ($histEmpty) $histEmpty.style.display = 'block';
   loadRound();
 });
 
-/* ── Keyboard shortcut (→ next) ── */
+/* ── Raccourcis clavier ── */
 document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight' && !$btnNext.disabled) loadRound();
   if (e.key === '1') choose(0);
