@@ -12,7 +12,6 @@ a { text-decoration: none; color: inherit; }
   --font-ui:      'Syne', sans-serif;
   --font-mono:    'JetBrains Mono', monospace;
 
-  /* dark (gris foncé, pas noir) */
   --bg:           #1a1a1f;
   --bg-card:      #222228;
   --bg-card-h:    #27272e;
@@ -20,8 +19,8 @@ a { text-decoration: none; color: inherit; }
   --border:       rgba(255,255,255,.09);
   --border-h:     rgba(255,255,255,.2);
   --text:         #eeedf6;
-  --text-2:       #9898b8;
-  --text-3:       #55556e;
+  --text-2:       #b8b8d0;
+  --text-3:       #6a6a85;
   --accent:       #c9a84c;
   --accent-h:     #e0be6e;
   --accent-glow:  rgba(201,168,76,.15);
@@ -30,6 +29,8 @@ a { text-decoration: none; color: inherit; }
   --tag-bg:       rgba(255,255,255,.05);
   --shadow-card:  0 2px 16px rgba(0,0,0,.25);
   --drawer-bg:    #1e1e25;
+  --img-w:        110px;
+  --img-h:        130px;
 }
 
 [data-theme="light"] {
@@ -40,8 +41,8 @@ a { text-decoration: none; color: inherit; }
   --border:       rgba(0,0,0,.09);
   --border-h:     rgba(0,0,0,.22);
   --text:         #1a1810;
-  --text-2:       #6a6852;
-  --text-3:       #b0ac9a;
+  --text-2:       #5a5840;
+  --text-3:       #a0a08a;
   --accent:       #9a6e1c;
   --accent-h:     #7a560e;
   --accent-glow:  rgba(154,110,28,.1);
@@ -66,7 +67,6 @@ body {
   overflow-x: hidden;
 }
 
-/* grain subtil */
 body::after {
   content: '';
   position: fixed;
@@ -89,14 +89,13 @@ body::after {
 }
 
 .header-left { display: flex; align-items: center; }
-
 .header-center { text-align: center; }
 
 .site-title {
   font-family: var(--font-ui);
-  font-size: clamp(3rem, 11vw, 6rem);
+  font-size: clamp(2.4rem, 11vw, 6rem);
   font-weight: 800;
-  letter-spacing: .1em;
+  letter-spacing: .08em;
   line-height: .95;
   color: var(--text);
   text-align: center;
@@ -105,7 +104,7 @@ body::after {
 .site-subtitle {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: .92rem;
+  font-size: clamp(.85rem, 2.5vw, .92rem);
   color: var(--text-2);
   margin-top: .4rem;
 }
@@ -117,12 +116,12 @@ body::after {
   gap: .5rem;
 }
 
-/* ── Boutons icône (thème + historique) ── */
+/* ── Boutons icône ── */
 .icon-btn {
   background: var(--tag-bg);
   border: 1px solid var(--border);
   border-radius: 50%;
-  width: 36px; height: 36px;
+  width: 38px; height: 38px;
   cursor: pointer;
   font-size: .95rem;
   font-family: var(--font-ui);
@@ -226,7 +225,8 @@ body::after {
   position: relative;
   overflow: hidden;
   transition: border-color .25s, background .25s, opacity .35s, filter .35s;
-  min-height: 130px;
+  /* hauteur fixe pour que les deux cartes soient toujours identiques */
+  height: 140px;
 }
 
 .card:first-child { border-radius: 12px 12px 0 0; border-bottom: none; animation: cardSlideA .45s cubic-bezier(.22,.68,0,1.2) both .05s; }
@@ -249,16 +249,24 @@ body::after {
 .card.winner::before { opacity: 1 !important; }
 .card.loser { opacity: .28; filter: grayscale(.8); cursor: pointer; }
 
+/* ── Image zone : taille fixe, objet cover ── */
 .card-img {
-  width: 120px; min-width: 120px;
+  width: var(--img-w);
+  min-width: var(--img-w);
+  max-width: var(--img-w);
+  height: 100%;           /* prend toute la hauteur de la carte */
   object-fit: cover;
-  align-self: stretch;
+  object-position: center top;
   border-right: 1px solid var(--border);
   background: var(--surface);
+  flex-shrink: 0;
 }
 
 .card-img-placeholder {
-  width: 120px; min-width: 120px;
+  width: var(--img-w);
+  min-width: var(--img-w);
+  max-width: var(--img-w);
+  height: 100%;
   background: var(--surface);
   border-right: 1px solid var(--border);
   display: flex;
@@ -269,18 +277,20 @@ body::after {
   flex-shrink: 0;
 }
 
+/* ── Card body ── */
 .card-body {
   flex: 1;
-  padding: 1rem 1.2rem;
+  padding: .85rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: .45rem;
+  gap: .3rem;
   min-width: 0;
+  overflow: hidden;
 }
 
 .card-option {
   font-family: var(--font-mono);
-  font-size: .55rem;
+  font-size: .6rem;
   letter-spacing: .18em;
   text-transform: uppercase;
   color: var(--accent);
@@ -294,8 +304,8 @@ body::after {
 
 .card-title {
   font-family: var(--font-display);
-  font-size: clamp(1.1rem, 3.5vw, 1.45rem);
-  font-weight: 400;
+  font-size: clamp(1.15rem, 4vw, 1.5rem);
+  font-weight: 600;
   line-height: 1.2;
   color: var(--text);
   white-space: nowrap;
@@ -307,9 +317,9 @@ body::after {
 
 .card-snippet {
   font-family: var(--font-ui);
-  font-size: .68rem;
+  font-size: clamp(.72rem, 2vw, .75rem);
   color: var(--text-2);
-  line-height: 1.6;
+  line-height: 1.55;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -317,21 +327,21 @@ body::after {
   flex: 1;
 }
 
-.card-footer { display: flex; margin-top: .1rem; }
+.card-footer { display: flex; margin-top: auto; }
 
 .wiki-btn {
   display: inline-flex;
   align-items: center;
   gap: .3rem;
   font-family: var(--font-mono);
-  font-size: .55rem;
+  font-size: .58rem;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--text-3);
   background: var(--tag-bg);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: .28rem .6rem;
+  padding: .3rem .65rem;
   transition: color .2s, border-color .2s, background .2s;
 }
 
@@ -388,7 +398,7 @@ body::after {
 
 .result-label {
   font-family: var(--font-mono);
-  font-size: .58rem;
+  font-size: .62rem;
   letter-spacing: .2em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -396,15 +406,15 @@ body::after {
 
 .result-winner {
   font-family: var(--font-display);
-  font-size: clamp(1.3rem, 4vw, 1.7rem);
-  font-weight: 400;
+  font-size: clamp(1.4rem, 5vw, 1.8rem);
+  font-weight: 600;
   font-style: italic;
   color: var(--accent);
 }
 
 .result-hint {
   font-family: var(--font-mono);
-  font-size: .55rem;
+  font-size: .58rem;
   letter-spacing: .1em;
   color: var(--text-3);
 }
@@ -417,12 +427,12 @@ body::after {
   align-items: center;
   gap: .5rem;
   font-family: var(--font-ui);
-  font-size: .7rem;
-  font-weight: 500;
+  font-size: .75rem;
+  font-weight: 600;
   letter-spacing: .06em;
   text-transform: uppercase;
   border-radius: 8px;
-  padding: .75rem 1.6rem;
+  padding: .8rem 1.6rem;
   cursor: pointer;
   transition: all .2s;
   border: 1px solid transparent;
@@ -477,7 +487,7 @@ body::after {
 
 .history-label {
   font-family: var(--font-mono);
-  font-size: .6rem;
+  font-size: .65rem;
   letter-spacing: .2em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -508,7 +518,7 @@ body::after {
   grid-template-columns: 1.4rem 1fr auto 1fr;
   align-items: center;
   gap: .5rem;
-  padding: .55rem .7rem;
+  padding: .6rem .75rem;
   border-radius: 7px;
   background: var(--tag-bg);
   border: 1px solid var(--border);
@@ -519,9 +529,9 @@ body::after {
 .history-item:hover { background: var(--surface); }
 
 .h-num { font-family: var(--font-mono); font-size: .5rem; color: var(--text-3); text-align: right; }
-.h-winner { font-family: var(--font-display); font-size: .9rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-winner { font-family: var(--font-display); font-size: .95rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .h-vs { font-family: var(--font-mono); font-size: .5rem; color: var(--text-3); text-transform: uppercase; flex-shrink: 0; }
-.h-loser { font-family: var(--font-display); font-size: .9rem; color: var(--text-3); text-decoration: line-through; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+.h-loser { font-family: var(--font-display); font-size: .95rem; color: var(--text-3); text-decoration: line-through; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
 
 .history-empty {
   font-family: var(--font-display);
@@ -554,14 +564,30 @@ body::after {
 @keyframes loadBar   { 0%{width:0%;margin-left:0} 40%{width:80%;margin-left:0} 60%{width:80%;margin-left:20%} 100%{width:0%;margin-left:100%} }
 @keyframes ellipsis  { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
 
-/* ── Responsive ── */
+/* ── Responsive mobile ── */
 @media (max-width: 480px) {
-  .site-header { padding: 1.5rem 1rem 1rem; }
-  .site-title  { font-size: 2.5rem; }
-  .card-img, .card-img-placeholder { width: 80px; min-width: 80px; }
-  .card-body   { padding: .8rem .9rem; }
-  .card-title  { font-size: 1rem; }
-  .controls    { flex-direction: column; width: 100%; }
-  .btn         { width: 100%; justify-content: center; }
+  :root {
+    --img-w: 90px;
+  }
+
+  .site-header { padding: 1.2rem 1rem .9rem; }
+  .site-title  { font-size: clamp(2rem, 12vw, 2.8rem); letter-spacing: .06em; }
+  .site-subtitle { font-size: .82rem; }
+  .divider-line { margin-bottom: 1.5rem; }
+
+  .card { height: 130px; }
+
+  .card-body { padding: .7rem .8rem; gap: .25rem; }
+  .card-title { font-size: clamp(1rem, 4.5vw, 1.25rem); }
+  .card-snippet { font-size: .72rem; -webkit-line-clamp: 2; }
+  .card-option { font-size: .58rem; }
+  .wiki-btn { font-size: .55rem; padding: .25rem .5rem; }
+
+  .controls { flex-direction: column; width: 100%; }
+  .btn { width: 100%; justify-content: center; font-size: .78rem; }
+
+  .result-winner { font-size: 1.3rem; }
+
   .history-drawer { width: 100vw; }
+  .main-wrap { gap: 1.2rem; }
 }
