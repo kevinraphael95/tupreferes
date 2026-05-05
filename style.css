@@ -130,7 +130,7 @@ body::after {
   }
 
   .header-left { display: none; }
-  .header-center { order: 1; width: 100%; }
+  .header-center { order: 1; width: 100%; text-align: center; }
 
   .header-right {
     order: 2;
@@ -139,7 +139,7 @@ body::after {
   }
 
   .site-title {
-     font-size: clamp(1.5rem, 8vw, 3.4rem);
+     font-size: clamp(1.5rem, 6.5vw, 3.4rem);
      letter-spacing: .05em;
      white-space: nowrap;
  }
