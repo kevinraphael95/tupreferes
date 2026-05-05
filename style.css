@@ -139,10 +139,10 @@ body::after {
   }
 
   .site-title {
-    font-size: clamp(2.6rem, 16vw, 3.4rem);
-    letter-spacing: .07em;
-    white-space: nowrap;
-  }
+     font-size: clamp(1.8rem, 11vw, 3.4rem);
+     letter-spacing: .05em;
+     white-space: nowrap;
+ }
 
   .site-subtitle { font-size: .82rem; }
   .divider-line { margin-bottom: 1.2rem; }
