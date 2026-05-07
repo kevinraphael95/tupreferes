@@ -102,17 +102,6 @@ async function fetchSummaryByTitle(title) {
   return parseSummary(await r.json());
 }
 
-async function fetchLinkedPage(sourceTitle) {
-  // Récupère les liens internes d'une page, en prend un au hasard
-  const url = `https://${LANG}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(sourceTitle)}&prop=links&pllimit=50&plnamespace=0&format=json&origin=*`;
-  const r = await fetch(url);
-  const d = await r.json();
-  const pages = d.query?.pages || {};
-  const links = Object.values(pages)[0]?.links || [];
-  if (!links.length) return fetchRandom();
-  const pick = links[Math.floor(Math.random() * links.length)];
-  return fetchSummaryByTitle(pick.title);
-}
 
 function parseSummary(d) {
   return {
@@ -135,10 +124,34 @@ async function fetchPair() {
   }
 
   if (mode === 'connected') {
-    // Page A aléatoire, page B = un lien dans la page A
-    const pageA = await fetchRandom().catch(() => fallbackPage());
-    const pageB = await fetchLinkedPage(pageA.title).catch(() => fallbackPage());
-    return [pageA, { ...pageB, _tag: `lié à "${pageA.title}"` }];
+    // On tire une page source au hasard (jamais affichée)
+    const source = await fetchRandom().catch(() => null);
+    if (!source) return [fallbackPage(), fallbackPage()];
+
+    // On récupère ses liens internes
+    const url = `https://${LANG}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(source.title)}&prop=links&pllimit=100&plnamespace=0&format=json&origin=*`;
+    const r = await fetch(url);
+    const d = await r.json();
+    const pages = d.query?.pages || {};
+    const links = Object.values(pages)[0]?.links || [];
+
+    if (links.length < 2) return [fallbackPage(), fallbackPage()];
+
+    // On pioche deux liens différents au hasard
+    const shuffle = [...links].sort(() => Math.random() - .5);
+    const [a, b] = await Promise.allSettled([
+      fetchSummaryByTitle(shuffle[0].title),
+      fetchSummaryByTitle(shuffle[1].title),
+    ]);
+
+    const pageA = a.status === 'fulfilled' ? a.value : fallbackPage();
+    const pageB = b.status === 'fulfilled' ? b.value : fallbackPage();
+
+    // On ajoute le tag pour savoir d'où ça vient
+    pageA._tag = `via "${source.title}"`;
+    pageB._tag = `via "${source.title}"`;
+
+    return [pageA, pageB];
   }
 
   if (mode === 'places') {
