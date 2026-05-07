@@ -8,27 +8,42 @@
 const LANG = 'fr';
 const API  = `https://${LANG}.wikipedia.org/api/rest_v1`;
 
+/* ── Catégories Wikipedia par mode ── */
+const PLACE_CATEGORIES = [
+  'Villes_de_France', 'Capitales', 'Île', 'Montagne', 'Océan',
+  'Lac', 'Fleuve', 'Pays', 'Continent', 'Désert',
+  'Forêt', 'Parc_national', 'Région_française',
+];
+
+const PEOPLE_CATEGORIES = [
+  'Acteur_français', 'Chanteur_français', 'Footballeur', 'Écrivain_français',
+  'Philosophe', 'Scientifique', 'Personnage_de_fiction', 'Politicien_français',
+  'Peintre_français', 'Réalisateur_français',
+];
+
 /* ── State ── */
 let state = {
   pages:     [null, null],
   chosen:    false,
   chosenIdx: -1,
   history:   [],
+  mode:      'classic', // 'classic' | 'connected' | 'places' | 'people'
 };
 
 /* ── DOM refs ── */
-const $loader          = document.getElementById('loader');
-const $arena           = document.getElementById('arena');
-const $btnNext         = document.getElementById('btnNext');
-const $btnReset        = document.getElementById('btnReset');
-const $histPanel       = document.getElementById('historyPanel');
-const $histList        = document.getElementById('historyList');
-const $histCount       = document.getElementById('historyCount');
-const $histEmpty       = document.getElementById('historyEmpty');
-const $themeBtn        = document.getElementById('themeToggle');
-const $histToggleBtn   = document.getElementById('btnHistoryToggle');
-const $histCloseBtn    = document.getElementById('btnHistoryClose');
-const $drawerOverlay   = document.getElementById('drawerOverlay');
+const $loader        = document.getElementById('loader');
+const $arena         = document.getElementById('arena');
+const $btnNext       = document.getElementById('btnNext');
+const $btnReset      = document.getElementById('btnReset');
+const $histPanel     = document.getElementById('historyPanel');
+const $histList      = document.getElementById('historyList');
+const $histCount     = document.getElementById('historyCount');
+const $histEmpty     = document.getElementById('historyEmpty');
+const $themeBtn      = document.getElementById('themeToggle');
+const $histToggleBtn = document.getElementById('btnHistoryToggle');
+const $histCloseBtn  = document.getElementById('btnHistoryClose');
+const $drawerOverlay = document.getElementById('drawerOverlay');
+const $modeBtns      = document.querySelectorAll('.mode-btn');
 
 /* ── Theme ── */
 (function initTheme() {
@@ -38,38 +53,68 @@ const $drawerOverlay   = document.getElementById('drawerOverlay');
 })();
 
 $themeBtn.addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'dark' ? 'light' : 'dark';
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('tp-theme', next);
 });
 
-/* ── Drawer historique ── */
-function openDrawer() {
-  $histPanel.classList.add('open');
-  $histPanel.setAttribute('aria-hidden', 'false');
-  $drawerOverlay.classList.add('visible');
-}
+/* ── Mode selector ── */
+$modeBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.mode = btn.dataset.mode;
+    $modeBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadRound();
+  });
+});
 
-function closeDrawer() {
-  $histPanel.classList.remove('open');
-  $histPanel.setAttribute('aria-hidden', 'true');
-  $drawerOverlay.classList.remove('visible');
-}
+/* ── Drawer ── */
+function openDrawer()  { $histPanel.classList.add('open'); $histPanel.setAttribute('aria-hidden','false'); $drawerOverlay.classList.add('visible'); }
+function closeDrawer() { $histPanel.classList.remove('open'); $histPanel.setAttribute('aria-hidden','true'); $drawerOverlay.classList.remove('visible'); }
 
 $histToggleBtn.addEventListener('click', openDrawer);
 $histCloseBtn.addEventListener('click', closeDrawer);
 $drawerOverlay.addEventListener('click', closeDrawer);
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeDrawer();
-});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 
 /* ── Wikipedia fetch ── */
 async function fetchRandom() {
   const r = await fetch(`${API}/page/random/summary`);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return parseSummary(await r.json());
+}
+
+async function fetchFromCategory(categoryList) {
+  // Choisit une catégorie au hasard, récupère ses membres, prend un article au hasard
+  const cat = categoryList[Math.floor(Math.random() * categoryList.length)];
+  const url = `https://${LANG}.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=Catégorie:${encodeURIComponent(cat)}&cmlimit=50&cmtype=page&format=json&origin=*`;
+  const r = await fetch(url);
   const d = await r.json();
+  const members = d.query?.categorymembers || [];
+  if (!members.length) return fetchRandom(); // fallback
+  const pick = members[Math.floor(Math.random() * members.length)];
+  return fetchSummaryByTitle(pick.title);
+}
+
+async function fetchSummaryByTitle(title) {
+  const r = await fetch(`${API}/page/summary/${encodeURIComponent(title)}`);
+  if (!r.ok) return fetchRandom(); // fallback si introuvable
+  return parseSummary(await r.json());
+}
+
+async function fetchLinkedPage(sourceTitle) {
+  // Récupère les liens internes d'une page, en prend un au hasard
+  const url = `https://${LANG}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(sourceTitle)}&prop=links&pllimit=50&plnamespace=0&format=json&origin=*`;
+  const r = await fetch(url);
+  const d = await r.json();
+  const pages = d.query?.pages || {};
+  const links = Object.values(pages)[0]?.links || [];
+  if (!links.length) return fetchRandom();
+  const pick = links[Math.floor(Math.random() * links.length)];
+  return fetchSummaryByTitle(pick.title);
+}
+
+function parseSummary(d) {
   return {
     title:       d.title,
     description: d.description || '',
@@ -80,27 +125,58 @@ async function fetchRandom() {
   };
 }
 
+/* ── Fetch pair selon le mode ── */
 async function fetchPair() {
-  const results = await Promise.allSettled([fetchRandom(), fetchRandom()]);
-  return results.map(r => r.status === 'fulfilled' ? r.value : {
-    title: 'Article indisponible',
-    description: '',
-    extract: '',
-    image: null,
-    url: `https://${LANG}.wikipedia.org`,
-  });
+  const mode = state.mode;
+
+  if (mode === 'classic') {
+    const results = await Promise.allSettled([fetchRandom(), fetchRandom()]);
+    return results.map(r => r.status === 'fulfilled' ? r.value : fallbackPage());
+  }
+
+  if (mode === 'connected') {
+    // Page A aléatoire, page B = un lien dans la page A
+    const pageA = await fetchRandom().catch(() => fallbackPage());
+    const pageB = await fetchLinkedPage(pageA.title).catch(() => fallbackPage());
+    return [pageA, { ...pageB, _tag: `lié à "${pageA.title}"` }];
+  }
+
+  if (mode === 'places') {
+    const [a, b] = await Promise.allSettled([
+      fetchFromCategory(PLACE_CATEGORIES),
+      fetchFromCategory(PLACE_CATEGORIES),
+    ]);
+    return [
+      a.status === 'fulfilled' ? a.value : fallbackPage(),
+      b.status === 'fulfilled' ? b.value : fallbackPage(),
+    ];
+  }
+
+  if (mode === 'people') {
+    const [a, b] = await Promise.allSettled([
+      fetchFromCategory(PEOPLE_CATEGORIES),
+      fetchFromCategory(PEOPLE_CATEGORIES),
+    ]);
+    return [
+      a.status === 'fulfilled' ? a.value : fallbackPage(),
+      b.status === 'fulfilled' ? b.value : fallbackPage(),
+    ];
+  }
+
+  return [fallbackPage(), fallbackPage()];
 }
 
-/* ── Round management ── */
+function fallbackPage() {
+  return { title: 'Article indisponible', description: '', extract: '', image: null, url: `https://${LANG}.wikipedia.org` };
+}
+
+/* ── Round ── */
 async function loadRound() {
   state.chosen    = false;
   state.chosenIdx = -1;
-
   showLoader(true);
   $btnNext.disabled = true;
-
   state.pages = await fetchPair();
-
   showLoader(false);
   renderArena();
 }
@@ -110,62 +186,48 @@ function showLoader(show) {
   $arena.style.display  = show ? 'none' : 'flex';
 }
 
-/* ── Card rendering ── */
+/* ── Arena ── */
 function renderArena() {
   $arena.innerHTML = '';
-
   $arena.appendChild(buildCard(state.pages[0], 0));
-
-  const vsDivider = document.createElement('div');
-  vsDivider.className = 'vs-divider';
-  vsDivider.innerHTML = `<div class="vs-pill">OU</div>`;
-  $arena.appendChild(vsDivider);
-
+  const vs = document.createElement('div');
+  vs.className = 'vs-divider';
+  vs.innerHTML = `<div class="vs-pill">OU</div>`;
+  $arena.appendChild(vs);
   $arena.appendChild(buildCard(state.pages[1], 1));
 }
 
 function buildCard(page, idx) {
   const card = document.createElement('div');
   card.className = 'card';
-  card.id        = `card-${idx}`;
+  card.id = `card-${idx}`;
   card.setAttribute('role', 'button');
   card.setAttribute('tabindex', '0');
   card.setAttribute('aria-label', `Choisir : ${page.title}`);
 
   const snippet = page.description || page.extract.slice(0, 160);
+  const tag = page._tag ? `<span class="mode-tag">${escapeHtml(page._tag)}</span>` : '';
 
   card.innerHTML = `
     ${page.image
       ? `<img class="card-img" src="${page.image}" alt="${escapeHtml(page.title)}" loading="lazy">`
-      : `<div class="card-img-placeholder">📄</div>`
-    }
+      : `<div class="card-img-placeholder">📄</div>`}
     <div class="card-body">
-      <div class="card-option">
-        <span class="option-badge">
-          Option ${idx === 0 ? 'A' : 'B'}
-          <span class="check-icon">✓</span>
-        </span>
-      </div>
+      ${tag}
       <div class="card-title">${escapeHtml(page.title)}</div>
       ${snippet ? `<div class="card-snippet">${escapeHtml(snippet)}</div>` : ''}
       <div class="card-footer">
-        <a class="wiki-btn" href="${page.url}" target="_blank" rel="noopener noreferrer"
-           aria-label="Ouvrir Wikipedia">
-          ↗ Wikipedia
-        </a>
+        <a class="wiki-btn" href="${page.url}" target="_blank" rel="noopener noreferrer">↗ Wikipedia</a>
       </div>
     </div>
   `;
 
   card.addEventListener('click', () => choose(idx));
-  card.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(idx); }
-  });
-
+  card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(idx); } });
   return card;
 }
 
-/* ── Choice logic ── */
+/* ── Choice ── */
 function choose(idx) {
   const alreadyChosen = state.chosen;
   if (alreadyChosen && state.chosenIdx === idx) return;
@@ -185,34 +247,24 @@ function choose(idx) {
 
   $btnNext.disabled = false;
 
-  if (!alreadyChosen) {
-    state.history.unshift({
-      winner: state.pages[idx].title,
-      loser:  state.pages[1 - idx].title,
-    });
-  } else {
-    state.history[0] = {
-      winner: state.pages[idx].title,
-      loser:  state.pages[1 - idx].title,
-    };
-  }
+  const entry = { winner: state.pages[idx].title, loser: state.pages[1 - idx].title, mode: state.mode };
+  if (!alreadyChosen) state.history.unshift(entry);
+  else state.history[0] = entry;
 
   renderHistory();
 }
 
-/* ── History rendering ── */
+/* ── History ── */
+const MODE_ICONS = { classic: '🎲', connected: '🔗', places: '🌍', people: '👤' };
+
 function renderHistory() {
   const h = state.history;
-
-  // Mettre à jour le compteur
   $histCount.textContent = `${h.length} choix`;
-
-  // Cacher/montrer l'état vide
   if ($histEmpty) $histEmpty.style.display = h.length ? 'none' : 'block';
 
   $histList.innerHTML = h.slice(0, 50).map((entry, i) => `
     <li class="history-item">
-      <span class="h-num">${h.length - i}</span>
+      <span class="h-num" title="${entry.mode}">${MODE_ICONS[entry.mode] || '·'}</span>
       <span class="h-winner">${escapeHtml(entry.winner)}</span>
       <span class="h-vs">ou</span>
       <span class="h-loser">${escapeHtml(entry.loser)}</span>
@@ -221,10 +273,7 @@ function renderHistory() {
 }
 
 /* ── Controls ── */
-$btnNext.addEventListener('click', () => {
-  if (state.chosen) loadRound();
-});
-
+$btnNext.addEventListener('click', () => { if (state.chosen) loadRound(); });
 $btnReset.addEventListener('click', () => {
   state.history = [];
   $histCount.textContent = '0 choix';
@@ -233,7 +282,6 @@ $btnReset.addEventListener('click', () => {
   loadRound();
 });
 
-/* ── Raccourcis clavier ── */
 document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight' && !$btnNext.disabled) loadRound();
   if (e.key === '1') choose(0);
@@ -242,11 +290,7 @@ document.addEventListener('keydown', e => {
 
 /* ── Helpers ── */
 function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 /* ── Boot ── */
