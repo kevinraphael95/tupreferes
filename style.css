@@ -588,3 +588,56 @@ body::after {
   .history-drawer { width: 100vw; }
   .main-wrap { gap: 1.3rem; }
 }
+
+/* ── Mode bar ── */
+.mode-bar {
+  width: 100%;
+  max-width: 700px;
+  padding: 0 1rem .8rem;
+  display: flex;
+  gap: .45rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  animation: fadeUp .45s ease both .1s;
+}
+
+.mode-btn {
+  font-family: var(--font-mono);
+  font-size: .62rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: var(--tag-bg);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: .45rem 1rem;
+  cursor: pointer;
+  transition: color .2s, border-color .2s, background .2s;
+  white-space: nowrap;
+}
+
+.mode-btn:hover {
+  color: var(--text);
+  border-color: var(--border-h);
+}
+
+.mode-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+
+/* ── Mode tag sur les cartes (mode connexe) ── */
+.mode-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: .55rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-glow);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: .18rem .5rem;
+  margin-bottom: .2rem;
+}
