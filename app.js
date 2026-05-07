@@ -85,14 +85,22 @@ async function fetchRandom() {
 }
 
 async function fetchFromCategory(categoryList) {
-  // Choisit une catégorie au hasard, récupère ses membres, prend un article au hasard
   const cat = categoryList[Math.floor(Math.random() * categoryList.length)];
   const url = `https://${LANG}.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=Catégorie:${encodeURIComponent(cat)}&cmlimit=50&cmtype=page&format=json&origin=*`;
   const r = await fetch(url);
   const d = await r.json();
   const members = d.query?.categorymembers || [];
-  if (!members.length) return fetchRandom(); // fallback
-  const pick = members[Math.floor(Math.random() * members.length)];
+
+  // Filtre les pages de liste et de portail
+  const filtered = members.filter(m =>
+    !m.title.startsWith('Liste') &&
+    !m.title.startsWith('Portail') &&
+    !m.title.startsWith('Catégorie') &&
+    !m.title.includes('(homonymie)')
+  );
+
+  if (!filtered.length) return fetchFromCategory(categoryList); // retry avec une autre catégorie
+  const pick = filtered[Math.floor(Math.random() * filtered.length)];
   return fetchSummaryByTitle(pick.title);
 }
 
