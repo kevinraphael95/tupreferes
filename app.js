@@ -131,6 +131,7 @@ async function fetchPair() {
     return results.map(r => r.status === 'fulfilled' ? r.value : fallbackPage());
   }
 
+
   if (mode === 'connected') {
     // On tire une page source au hasard (jamais affichée)
     const source = await fetchRandom().catch(() => null);
@@ -161,6 +162,8 @@ async function fetchPair() {
 
     return [pageA, pageB];
   }
+
+
 
   if (mode === 'places') {
     const [a, b] = await Promise.allSettled([
