@@ -262,12 +262,12 @@ loadRound();
   const stage = document.getElementById('tw-stage');
   if (!stage) return;
 
-  const POOL_SIZE = 10;
-  const TICK      = 48;    /* ms par lettre */
+  const POOL_SIZE = 22;
+  const TICK      = 40;    /* ms par lettre */
   const STAY      = 5000;  /* ms affiché complet */
   const FADE_OUT  = 1000;
-  const MIN_DELAY = 1800;
-  const MAX_DELAY = 4500;
+  const MIN_DELAY = 600;
+  const MAX_DELAY = 1800;
 
   function rand(a, b) { return Math.random() * (b - a) + a; }
 
@@ -322,7 +322,7 @@ loadRound();
     setTimeout(loop, rand(MIN_DELAY, MAX_DELAY));
   }
 
-  /* Quelques mots au démarrage */
-  for (let i = 0; i < 3; i++) setTimeout(spawnWord, i * 1200);
+  /* Beaucoup de mots au démarrage */
+  for (let i = 0; i < 10; i++) setTimeout(spawnWord, i * 400);
   loop();
 })();
