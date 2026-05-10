@@ -257,44 +257,57 @@ function escapeHtml(str) {
 loadRound();
 
 /* ── Typewriter background ── */
+/* ── Typewriter background — extraits Wikipedia aléatoires ── */
 (function initTypewriter() {
   const stage = document.getElementById('tw-stage');
   if (!stage) return;
 
-  const WORDS = [
-    'Wikipedia','Aléatoire','Connaissance','Encyclopédie','Culture',
-    'Histoire','Science','Géographie','Philosophie','Littérature',
-    'Politique','Musique','Cinéma','Sport','Nature','Technologie',
-    'Art','Médecine','Économie','Société','Biologie','Astronomie',
-    'Mathématiques','Physique','Chimie','Architecture','Mythologie',
-    'Gastronomie','Exploration','Découverte','Invention','Révolution',
-  ];
-
-  const POOL_SIZE = 12;
-  const TICK      = 60;    /* ms entre chaque lettre */
-  const STAY      = 4000;  /* ms affiché complet avant d'effacer */
-  const FADE_OUT  = 900;   /* ms de fondu sortant */
-  const MIN_DELAY = 2000;
-  const MAX_DELAY = 5500;
+  const POOL_SIZE = 10;
+  const TICK      = 48;    /* ms par lettre */
+  const STAY      = 5000;  /* ms affiché complet */
+  const FADE_OUT  = 1000;
+  const MIN_DELAY = 1800;
+  const MAX_DELAY = 4500;
 
   function rand(a, b) { return Math.random() * (b - a) + a; }
 
-  function spawnWord() {
+  /* Fetch un extrait Wikipedia aléatoire (quelques mots) */
+  async function fetchSnippet() {
+    try {
+      const r = await fetch('https://fr.wikipedia.org/api/rest_v1/page/random/summary');
+      if (!r.ok) throw new Error();
+      const d = await r.json();
+      const src = d.description || d.extract || d.title || '';
+      /* On prend un morceau de 3 à 7 mots */
+      const words = src.split(/\s+/).filter(Boolean);
+      if (words.length < 2) return d.title;
+      const start = Math.floor(Math.random() * Math.max(1, words.length - 6));
+      const len   = Math.floor(rand(3, 7));
+      return words.slice(start, start + len).join(' ');
+    } catch {
+      return null;
+    }
+  }
+
+  async function spawnWord() {
     if (stage.querySelectorAll('.tw-word').length >= POOL_SIZE) return;
 
-    const word = WORDS[Math.floor(Math.random() * WORDS.length)];
-    const el   = document.createElement('span');
+    const text = await fetchSnippet();
+    if (!text) return;
+
+    const el = document.createElement('span');
     el.className = 'tw-word';
-    el.style.left     = rand(2, 88) + 'vw';
+    el.style.left     = rand(2, 80) + 'vw';
     el.style.top      = rand(5, 90) + 'vh';
-    el.style.fontSize = rand(.65, 1.1).toFixed(2) + 'rem';
+    el.style.fontSize = rand(.6, .95).toFixed(2) + 'rem';
     stage.appendChild(el);
 
+    /* Frappe lettre par lettre */
     let i = 0;
     const type = setInterval(() => {
-      el.textContent = word.slice(0, ++i);
+      el.textContent = text.slice(0, ++i);
       if (i === 1) el.classList.add('visible');
-      if (i >= word.length) {
+      if (i >= text.length) {
         clearInterval(type);
         setTimeout(() => {
           el.classList.remove('visible');
@@ -309,7 +322,7 @@ loadRound();
     setTimeout(loop, rand(MIN_DELAY, MAX_DELAY));
   }
 
-  /* quelques mots dès le départ */
-  for (let i = 0; i < 4; i++) setTimeout(spawnWord, i * 700);
+  /* Quelques mots au démarrage */
+  for (let i = 0; i < 3; i++) setTimeout(spawnWord, i * 1200);
   loop();
 })();
