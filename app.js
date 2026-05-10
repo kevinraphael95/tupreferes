@@ -319,3 +319,66 @@ function escapeHtml(str) {
 
 /* ── Boot ── */
 loadRound();
+
+/* ── Typewriter background ── */
+(function initTypewriter() {
+  const stage = document.getElementById('tw-stage');
+  if (!stage) return;
+
+  const WORDS = [
+    'Wikipedia','Aléatoire','Connaissance','Encyclopédie','Culture',
+    'Histoire','Science','Géographie','Philosophie','Littérature',
+    'Politique','Musique','Cinéma','Sport','Nature','Technologie',
+    'Art','Médecine','Économie','Société','Biologie','Astronomie',
+    'Mathématiques','Physique','Chimie','Architecture','Mythologie',
+    'Gastronomie','Exploration','Découverte','Invention','Révolution',
+  ];
+
+  const POOL_SIZE = 18;       // mots simultanés max
+  const TICK = 55;            // ms par lettre
+  const STAY = 3200;          // ms affiché complet
+  const FADE_OUT = 700;       // ms de fade out (via transition CSS)
+  const BETWEEN = [1800, 5000]; // délai aléatoire entre deux spawns
+
+  function rand(min, max) { return Math.random() * (max - min) + min; }
+
+  function spawnWord() {
+    if (stage.querySelectorAll('.tw-word').length >= POOL_SIZE) return;
+
+    const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+    const el = document.createElement('span');
+    el.className = 'tw-word';
+    el.style.left = rand(2, 90) + 'vw';
+    el.style.top  = rand(4, 92) + 'vh';
+    el.style.fontSize = rand(.6, .95).toFixed(2) + 'rem';
+    el.style.opacity = '0';
+    stage.appendChild(el);
+
+    // Frappe lettre par lettre
+    let i = 0;
+    const type = setInterval(() => {
+      el.textContent = word.slice(0, ++i);
+      if (i === 1) el.classList.add('visible'); // fade in dès la 1ère lettre
+      if (i >= word.length) {
+        clearInterval(type);
+        // Reste affiché, puis disparaît
+        setTimeout(() => {
+          el.classList.remove('visible');
+          setTimeout(() => el.remove(), FADE_OUT);
+        }, STAY);
+      }
+    }, TICK);
+  }
+
+  // Lance les spawns en boucle avec délai aléatoire
+  function loop() {
+    spawnWord();
+    setTimeout(loop, rand(BETWEEN[0], BETWEEN[1]));
+  }
+
+  // Quelques mots d'emblée
+  for (let i = 0; i < 5; i++) {
+    setTimeout(spawnWord, i * 600);
+  }
+  loop();
+})();
