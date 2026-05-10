@@ -150,7 +150,7 @@ body::after {
     flex-direction: column;
     align-items: center;
     gap: .5rem;
-    padding: 2.5rem 1rem 1.8rem;   /* plus d'air vertical */
+    padding: 2rem 1rem 1.5rem;
   }
 
   .header-left  { display: none; }
@@ -158,11 +158,11 @@ body::after {
   .header-right  { order: 2; justify-content: center; gap: .6rem; }
 
   .site-title {
-    font-size: clamp(1.5rem, 9vw, 2.2rem);
-    line-height: 1.2;
-    letter-spacing: .04em;
-    white-space: normal;
-    word-break: break-word;
+    font-size: 7.5vw;
+    line-height: 1.25;
+    letter-spacing: 0;
+    white-space: nowrap;
+    text-align: center;
   }
 
   .site-subtitle { font-size: .82rem; }
