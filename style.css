@@ -125,24 +125,21 @@ body::after {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: .75rem;
-    padding: 1.4rem 1rem 1rem;
+    gap: .6rem;
+    padding: 2rem 1rem 1.4rem;   /* ← plus de padding vertical */
+    min-height: 130px;            /* ← hauteur minimale garantie */
   }
 
   .header-left { display: none; }
   .header-center { order: 1; width: 100%; text-align: center; }
-
-  .header-right {
-    order: 2;
-    justify-content: center;
-    gap: .6rem;
-  }
+  .header-right { order: 2; justify-content: center; gap: .6rem; }
 
   .site-title {
-     font-size: clamp(1.5rem, 6.5vw, 3.4rem);
-     letter-spacing: .05em;
-     white-space: nowrap;
- }
+    font-size: clamp(2.4rem, 11vw, 4rem);  /* ← bien plus grand */
+    letter-spacing: .06em;
+    white-space: nowrap;
+    line-height: 1.05;
+  }
 
   .site-subtitle { font-size: .82rem; }
   .divider-line { margin-bottom: 1.2rem; }
@@ -640,4 +637,34 @@ body::after {
   border-radius: 4px;
   padding: .18rem .5rem;
   margin-bottom: .2rem;
+}
+
+/* ── Typewriter background ── */
+#tw-stage {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.tw-word {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  opacity: 0;
+  white-space: nowrap;
+  transition: opacity .6s ease;
+  user-select: none;
+}
+
+.tw-word.visible { opacity: .28; }
+
+/* S'assure que le contenu passe par-dessus */
+.site-header, .divider-line, .mode-bar, .main-wrap, .site-footer {
+  position: relative;
+  z-index: 1;
 }
