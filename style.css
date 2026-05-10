@@ -126,9 +126,24 @@ body::after {
     flex-direction: column;
     align-items: center;
     gap: .6rem;
-    padding: 2rem 1rem 1.4rem;   /* ← plus de padding vertical */
-    min-height: 130px;            /* ← hauteur minimale garantie */
+    padding: 2rem 1rem 1.4rem;
+    min-height: 130px;
   }
+
+  .header-left { display: none; }
+  .header-center { order: 1; width: 100%; text-align: center; }
+  .header-right { order: 2; justify-content: center; gap: .6rem; }
+
+  .site-title {
+    font-size: clamp(2.4rem, 11vw, 4rem);
+    letter-spacing: .06em;
+    white-space: nowrap;
+    line-height: 1.05;
+  }
+
+  .site-subtitle { font-size: .82rem; }
+  .divider-line { margin-bottom: 1.2rem; }
+}
 
   .header-left { display: none; }
   .header-center { order: 1; width: 100%; text-align: center; }
