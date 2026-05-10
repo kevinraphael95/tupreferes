@@ -145,21 +145,6 @@ body::after {
   .divider-line { margin-bottom: 1.2rem; }
 }
 
-  .header-left { display: none; }
-  .header-center { order: 1; width: 100%; text-align: center; }
-  .header-right { order: 2; justify-content: center; gap: .6rem; }
-
-  .site-title {
-    font-size: clamp(2.4rem, 11vw, 4rem);  /* ← bien plus grand */
-    letter-spacing: .06em;
-    white-space: nowrap;
-    line-height: 1.05;
-  }
-
-  .site-subtitle { font-size: .82rem; }
-  .divider-line { margin-bottom: 1.2rem; }
-}
-
 /* ── Boutons icône ── */
 .icon-btn {
   background: var(--tag-bg);
@@ -678,7 +663,6 @@ body::after {
 
 .tw-word.visible { opacity: .28; }
 
-/* S'assure que le contenu passe par-dessus */
 .site-header, .divider-line, .mode-bar, .main-wrap, .site-footer {
   position: relative;
   z-index: 1;
