@@ -1,24 +1,36 @@
+/* ============================================================
+   TU PRÉFÈRES — Application Logic
+   ============================================================ */
+
 'use strict';
 
+/* ── Config ── */
 const LANG = 'fr';
 const API  = `https://${LANG}.wikipedia.org/api/rest_v1`;
 
+/* ── Catégories Wikipedia par mode ── */
 const PLACE_CATEGORIES = [
-  'Villes_de_France','Capitales','Île','Montagne','Océan',
-  'Lac','Fleuve','Pays','Continent','Désert',
-  'Forêt','Parc_national','Région_française',
+  'Villes_de_France', 'Capitales', 'Île', 'Montagne', 'Océan',
+  'Lac', 'Fleuve', 'Pays', 'Continent', 'Désert',
+  'Forêt', 'Parc_national', 'Région_française',
 ];
 
 const PEOPLE_CATEGORIES = [
-  'Acteur_français','Chanteur_français','Footballeur','Écrivain_français',
-  'Philosophe','Scientifique','Personnage_de_fiction','Politicien_français',
-  'Peintre_français','Réalisateur_français',
+  'Acteur_français', 'Chanteur_français', 'Footballeur', 'Écrivain_français',
+  'Philosophe', 'Scientifique', 'Personnage_de_fiction', 'Politicien_français',
+  'Peintre_français', 'Réalisateur_français',
 ];
 
+/* ── State ── */
 let state = {
-  pages: [null, null], chosen: false, chosenIdx: -1, history: [], mode: 'classic',
+  pages:     [null, null],
+  chosen:    false,
+  chosenIdx: -1,
+  history:   [],
+  mode:      'classic', // 'classic' | 'connected' | 'places' | 'people'
 };
 
+/* ── DOM refs ── */
 const $loader        = document.getElementById('loader');
 const $arena         = document.getElementById('arena');
 const $btnNext       = document.getElementById('btnNext');
@@ -46,7 +58,7 @@ $themeBtn.addEventListener('click', () => {
   localStorage.setItem('tp-theme', next);
 });
 
-/* ── Mode ── */
+/* ── Mode selector ── */
 $modeBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     state.mode = btn.dataset.mode;
@@ -65,7 +77,7 @@ $histCloseBtn.addEventListener('click', closeDrawer);
 $drawerOverlay.addEventListener('click', closeDrawer);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
 
-/* ── Wikipedia ── */
+/* ── Wikipedia fetch ── */
 async function fetchRandom() {
   const r = await fetch(`${API}/page/random/summary`);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -77,19 +89,27 @@ async function fetchFromCategory(categoryList) {
   const url = `https://${LANG}.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=Catégorie:${encodeURIComponent(cat)}&cmlimit=50&cmtype=page&format=json&origin=*`;
   const r = await fetch(url);
   const d = await r.json();
-  const members = (d.query?.categorymembers || []).filter(m =>
-    !m.title.startsWith('Liste') && !m.title.startsWith('Portail') &&
-    !m.title.startsWith('Catégorie') && !m.title.includes('(homonymie)')
+  const members = d.query?.categorymembers || [];
+
+  // Filtre les pages de liste et de portail
+  const filtered = members.filter(m =>
+    !m.title.startsWith('Liste') &&
+    !m.title.startsWith('Portail') &&
+    !m.title.startsWith('Catégorie') &&
+    !m.title.includes('(homonymie)')
   );
-  if (!members.length) return fetchFromCategory(categoryList);
-  return fetchSummaryByTitle(members[Math.floor(Math.random() * members.length)].title);
+
+  if (!filtered.length) return fetchFromCategory(categoryList); // retry avec une autre catégorie
+  const pick = filtered[Math.floor(Math.random() * filtered.length)];
+  return fetchSummaryByTitle(pick.title);
 }
 
 async function fetchSummaryByTitle(title) {
   const r = await fetch(`${API}/page/summary/${encodeURIComponent(title)}`);
-  if (!r.ok) return fetchRandom();
+  if (!r.ok) return fetchRandom(); // fallback si introuvable
   return parseSummary(await r.json());
 }
+
 
 function parseSummary(d) {
   return {
@@ -97,10 +117,12 @@ function parseSummary(d) {
     description: d.description || '',
     extract:     d.extract     || '',
     image:       d.thumbnail?.source || null,
-    url:         d.content_urls?.desktop?.page || `https://${LANG}.wikipedia.org/wiki/${encodeURIComponent(d.title)}`,
+    url:         d.content_urls?.desktop?.page
+                 || `https://${LANG}.wikipedia.org/wiki/${encodeURIComponent(d.title)}`,
   };
 }
 
+/* ── Fetch pair selon le mode ── */
 async function fetchPair() {
   const mode = state.mode;
 
@@ -109,31 +131,60 @@ async function fetchPair() {
     return results.map(r => r.status === 'fulfilled' ? r.value : fallbackPage());
   }
 
+
   if (mode === 'connected') {
+    // On tire une page source au hasard (jamais affichée)
     const source = await fetchRandom().catch(() => null);
     if (!source) return [fallbackPage(), fallbackPage()];
+
+    // On récupère ses liens internes
     const url = `https://${LANG}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(source.title)}&prop=links&pllimit=100&plnamespace=0&format=json&origin=*`;
     const r = await fetch(url);
     const d = await r.json();
-    const links = Object.values(d.query?.pages || {})[0]?.links || [];
+    const pages = d.query?.pages || {};
+    const links = Object.values(pages)[0]?.links || [];
+
     if (links.length < 2) return [fallbackPage(), fallbackPage()];
+
+    // On pioche deux liens différents au hasard
     const shuffle = [...links].sort(() => Math.random() - .5);
-    const [a, b] = await Promise.allSettled([fetchSummaryByTitle(shuffle[0].title), fetchSummaryByTitle(shuffle[1].title)]);
+    const [a, b] = await Promise.allSettled([
+      fetchSummaryByTitle(shuffle[0].title),
+      fetchSummaryByTitle(shuffle[1].title),
+    ]);
+
     const pageA = a.status === 'fulfilled' ? a.value : fallbackPage();
     const pageB = b.status === 'fulfilled' ? b.value : fallbackPage();
+
+    // On ajoute le tag pour savoir d'où ça vient
     pageA._tag = `via "${source.title}"`;
     pageB._tag = `via "${source.title}"`;
+
     return [pageA, pageB];
   }
 
+
+
   if (mode === 'places') {
-    const [a, b] = await Promise.allSettled([fetchFromCategory(PLACE_CATEGORIES), fetchFromCategory(PLACE_CATEGORIES)]);
-    return [a.status === 'fulfilled' ? a.value : fallbackPage(), b.status === 'fulfilled' ? b.value : fallbackPage()];
+    const [a, b] = await Promise.allSettled([
+      fetchFromCategory(PLACE_CATEGORIES),
+      fetchFromCategory(PLACE_CATEGORIES),
+    ]);
+    return [
+      a.status === 'fulfilled' ? a.value : fallbackPage(),
+      b.status === 'fulfilled' ? b.value : fallbackPage(),
+    ];
   }
 
   if (mode === 'people') {
-    const [a, b] = await Promise.allSettled([fetchFromCategory(PEOPLE_CATEGORIES), fetchFromCategory(PEOPLE_CATEGORIES)]);
-    return [a.status === 'fulfilled' ? a.value : fallbackPage(), b.status === 'fulfilled' ? b.value : fallbackPage()];
+    const [a, b] = await Promise.allSettled([
+      fetchFromCategory(PEOPLE_CATEGORIES),
+      fetchFromCategory(PEOPLE_CATEGORIES),
+    ]);
+    return [
+      a.status === 'fulfilled' ? a.value : fallbackPage(),
+      b.status === 'fulfilled' ? b.value : fallbackPage(),
+    ];
   }
 
   return [fallbackPage(), fallbackPage()];
@@ -145,7 +196,8 @@ function fallbackPage() {
 
 /* ── Round ── */
 async function loadRound() {
-  state.chosen = false; state.chosenIdx = -1;
+  state.chosen    = false;
+  state.chosenIdx = -1;
   showLoader(true);
   $btnNext.disabled = true;
   state.pages = await fetchPair();
@@ -203,17 +255,26 @@ function buildCard(page, idx) {
 function choose(idx) {
   const alreadyChosen = state.chosen;
   if (alreadyChosen && state.chosenIdx === idx) return;
-  state.chosen = true; state.chosenIdx = idx;
 
-  const winner = document.getElementById(`card-${idx}`);
-  const loser  = document.getElementById(`card-${1 - idx}`);
-  winner.classList.add('winner'); winner.classList.remove('loser');
-  loser.classList.add('loser');   loser.classList.remove('winner');
+  state.chosen    = true;
+  state.chosenIdx = idx;
+
+  const cardA = document.getElementById('card-0');
+  const cardB = document.getElementById('card-1');
+  const winner = idx === 0 ? cardA : cardB;
+  const loser  = idx === 0 ? cardB : cardA;
+
+  winner.classList.add('winner');
+  winner.classList.remove('loser');
+  loser.classList.add('loser');
+  loser.classList.remove('winner');
+
   $btnNext.disabled = false;
 
   const entry = { winner: state.pages[idx].title, loser: state.pages[1 - idx].title, mode: state.mode };
   if (!alreadyChosen) state.history.unshift(entry);
   else state.history[0] = entry;
+
   renderHistory();
 }
 
@@ -224,6 +285,7 @@ function renderHistory() {
   const h = state.history;
   $histCount.textContent = `${h.length} choix`;
   if ($histEmpty) $histEmpty.style.display = h.length ? 'none' : 'block';
+
   $histList.innerHTML = h.slice(0, 50).map((entry, i) => `
     <li class="history-item">
       <span class="h-num" title="${entry.mode}">${MODE_ICONS[entry.mode] || '·'}</span>
@@ -250,79 +312,10 @@ document.addEventListener('keydown', e => {
   if (e.key === '2') choose(1);
 });
 
+/* ── Helpers ── */
 function escapeHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+/* ── Boot ── */
 loadRound();
-
-/* ── Typewriter background ── */
-/* ── Typewriter background — extraits Wikipedia aléatoires ── */
-(function initTypewriter() {
-  const stage = document.getElementById('tw-stage');
-  if (!stage) return;
-
-  const POOL_SIZE = 22;
-  const TICK      = 40;    /* ms par lettre */
-  const STAY      = 5000;  /* ms affiché complet */
-  const FADE_OUT  = 1000;
-  const MIN_DELAY = 600;
-  const MAX_DELAY = 1800;
-
-  function rand(a, b) { return Math.random() * (b - a) + a; }
-
-  /* Fetch un extrait Wikipedia aléatoire (quelques mots) */
-  async function fetchSnippet() {
-    try {
-      const r = await fetch('https://fr.wikipedia.org/api/rest_v1/page/random/summary');
-      if (!r.ok) throw new Error();
-      const d = await r.json();
-      const src = d.description || d.extract || d.title || '';
-      /* On prend un morceau de 3 à 7 mots */
-      const words = src.split(/\s+/).filter(Boolean);
-      if (words.length < 2) return d.title;
-      const start = Math.floor(Math.random() * Math.max(1, words.length - 6));
-      const len   = Math.floor(rand(3, 7));
-      return words.slice(start, start + len).join(' ');
-    } catch {
-      return null;
-    }
-  }
-
-  async function spawnWord() {
-    if (stage.querySelectorAll('.tw-word').length >= POOL_SIZE) return;
-
-    const text = await fetchSnippet();
-    if (!text) return;
-
-    const el = document.createElement('span');
-    el.className = 'tw-word';
-    el.style.left     = rand(2, 80) + 'vw';
-    el.style.top      = rand(5, 90) + 'vh';
-    el.style.fontSize = rand(.6, .95).toFixed(2) + 'rem';
-    stage.appendChild(el);
-
-    /* Frappe lettre par lettre */
-    let i = 0;
-    const type = setInterval(() => {
-      el.textContent = text.slice(0, ++i);
-      if (i === 1) el.classList.add('visible');
-      if (i >= text.length) {
-        clearInterval(type);
-        setTimeout(() => {
-          el.classList.remove('visible');
-          setTimeout(() => el.remove(), FADE_OUT);
-        }, STAY);
-      }
-    }, TICK);
-  }
-
-  function loop() {
-    spawnWord();
-    setTimeout(loop, rand(MIN_DELAY, MAX_DELAY));
-  }
-
-  /* Beaucoup de mots au démarrage */
-  for (let i = 0; i < 10; i++) setTimeout(spawnWord, i * 400);
-  loop();
-})();
