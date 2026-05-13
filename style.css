@@ -9,7 +9,7 @@ a { text-decoration: none; color: inherit; }
 /* ── Tokens ── */
 :root {
   --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-ui:      'Syne', sans-serif;
+  --font-ui:      'Space Grotesk', sans-serif;
   --font-mono:    'JetBrains Mono', monospace;
 
   /* Dark theme éclairci — gris foncé, pas noir */
