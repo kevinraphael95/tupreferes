@@ -87,11 +87,12 @@ body::after {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
+  justify-items: center;
   padding: 0.8rem 1.5rem 1.2rem;
   animation: fadeDown .5s ease both;
 }
 
-.header-left { display: flex; align-items: center; }
+.header-left { display: flex; align-items: center; justify-self: start; }
 .header-center { text-align: center; }
 
 .site-title {
@@ -115,6 +116,7 @@ body::after {
 .header-right {
   display: flex;
   justify-content: flex-end;
+  justify-self: end;
   align-items: center;
   gap: .5rem;
 }
