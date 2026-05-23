@@ -11,17 +11,19 @@ const MW   = `https://${LANG}.wikipedia.org/w/api.php`;
 const WD   = 'https://www.wikidata.org/w/api.php';
 
 /* ─────────────────────────────────────────────────────────────
-   WIKIDATA — QIDs acceptés par mode (P31 = instance de)
+   WIKIDATA — QIDs P31 (instance de) acceptés par mode
    ───────────────────────────────────────────────────────────── */
 const WD_TYPES = {
   animals: new Set([
-    'Q16521',    // taxon (couvre toutes les espèces biologiques)
+    'Q16521',    // taxon
     'Q729',      // animal
     'Q7432',     // espèce
     'Q38829',    // genre biologique
     'Q23038290', // taxon fossile
     'Q310890',   // sous-espèce
     'Q68947',    // sous-genre
+    'Q4886',     // race (animale)
+    'Q42292',    // variété biologique
   ]),
   places: new Set([
     'Q515',      // ville
@@ -44,23 +46,30 @@ const WD_TYPES = {
     'Q22698',    // parc national
     'Q46169',    // cap
     'Q35872',    // détroit
-    'Q43197',    // désert (spécifique)
-    'Q179049',   // forêt (spécifique)
+    'Q43197',    // désert (lieu)
+    'Q179049',   // forêt (lieu)
     'Q15324',    // continent
-    'Q56061',    // entité territoriale administrative
+    'Q56061',    // entité territoriale
     'Q15304953', // subdivision pays
     'Q82794',    // région géographique
-    'Q41176',    // bâtiment — exclu
+    'Q1620908',  // île principale
+    'Q33742',    // île naturelle
+    'Q1637706',  // ville millionnaire
+    'Q200250',   // massif
+    'Q355304',   // cours d'eau
+    'Q131669',   // canyon
+    'Q39816',    // vallée
+    'Q165',      // mer
+    'Q34763',    // péninsule
+    'Q1428',     // baie
   ]),
   people: new Set([
-    'Q5',        // être humain — seul QID qui compte
+    'Q5',        // être humain — seul QID valide
   ]),
 };
 
 /* ─────────────────────────────────────────────────────────────
    CATÉGORIES Wikipedia par mode
-   Servent uniquement de point d'entrée pour trouver des articles.
-   Wikidata valide ensuite que c'est bien le bon type.
    ───────────────────────────────────────────────────────────── */
 const MODES = {
   classic: { label: '🎲 Classique' },
@@ -68,7 +77,6 @@ const MODES = {
   animals: {
     label: '🐾 Animaux',
     categories: [
-      // Groupes taxonomiques larges — leurs membres sont des espèces
       'Espèce_de_mammifères',
       'Espèce_d\'oiseaux',
       'Espèce_de_reptiles',
@@ -78,7 +86,6 @@ const MODES = {
       'Espèce_d\'araignées',
       'Espèce_de_mollusques',
       'Espèce_de_crustacés',
-      // Groupes populaires bien fournis
       'Félins',
       'Canidés',
       'Primates',
@@ -101,31 +108,23 @@ const MODES = {
   places: {
     label: '🌍 Lieux',
     categories: [
-      // Pays
       'Pays_d\'Europe', 'Pays_d\'Afrique',
       'Pays_d\'Asie', 'Pays_d\'Amérique', 'Pays_d\'Océanie',
-      // Villes
       'Ville_de_plus_de_100_000_habitants_en_France',
       'Capitale_en_Europe', 'Capitale_en_Afrique',
       'Capitale_en_Asie', 'Capitale_en_Amérique',
-      // Admin française
       'Région_française', 'Département_français',
-      // Montagnes
       'Sommet_des_Alpes', 'Sommet_des_Pyrénées',
       'Sommet_de_l\'Himalaya', 'Sommet_des_Andes',
       'Volcan_actif',
-      // Îles
       'Île_de_la_Méditerranée', 'Île_de_l\'Atlantique',
       'Île_du_Pacifique', 'Île_de_l\'océan_Indien',
-      // Eaux
       'Fleuve_d\'Europe', 'Fleuve_d\'Afrique',
       'Fleuve_d\'Asie', 'Fleuve_d\'Amérique',
       'Lac_d\'Europe', 'Lac_d\'Afrique',
-      // Divers
       'Parc_national_en_France', 'Parc_national_en_Afrique',
       'Parc_national_aux_États-Unis',
-      'Détroit', 'Cap',
-      'Grotte_en_France',
+      'Détroit', 'Cap', 'Grotte_en_France',
     ],
   },
 
@@ -156,7 +155,7 @@ const MODES = {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   FILTRES TITRE / DESCRIPTION (rapides, sans réseau)
+   FILTRES RAPIDES (sans réseau)
    ───────────────────────────────────────────────────────────── */
 const BAD_TITLE_PREFIXES = [
   'Liste', 'Portail', 'Catégorie', 'Modèle', 'Projet',
@@ -174,11 +173,6 @@ const BAD_TITLE_PATTERNS = [
 
 const MIN_EXTRACT_LEN = 150;
 
-const BAD_DESCRIPTION_PATTERNS = [
-  /désambiguïsation/i,
-  /page d.homonymie/i,
-];
-
 function isTitleOk(title) {
   for (const p of BAD_TITLE_PREFIXES) if (title.startsWith(p)) return false;
   for (const r of BAD_TITLE_PATTERNS) if (r.test(title)) return false;
@@ -188,54 +182,59 @@ function isTitleOk(title) {
 function isPageOk(page) {
   if (!page?.title) return false;
   if (!isTitleOk(page.title)) return false;
-  if (page.description) {
-    for (const r of BAD_DESCRIPTION_PATTERNS) if (r.test(page.description)) return false;
-  }
+  if (/désambiguïsation|page d.homonymie/i.test(page.description)) return false;
   if (!page.extract || page.extract.length < MIN_EXTRACT_LEN) return false;
   return true;
 }
 
 /* ─────────────────────────────────────────────────────────────
-   WIKIDATA — Validation du type
-   2 requêtes : QID puis P31 (instance de)
+   WIKIDATA — Validation via P31 (instance de)
+   Cache en mémoire pour éviter les doublons de requêtes.
+   Permissif en cas d'erreur réseau (on laisse passer).
    ───────────────────────────────────────────────────────────── */
-const wdCache = new Map(); // titre → bool par mode
+const wdCache = new Map(); // `mode:title` → true | false
 
 async function wikidataValidate(page, mode) {
   if (mode === 'classic') return true;
   const types = WD_TYPES[mode];
   if (!types) return true;
 
-  const cacheKey = `${mode}:${page.title}`;
-  if (wdCache.has(cacheKey)) return wdCache.get(cacheKey);
+  const key = `${mode}:${page.title}`;
+  if (wdCache.has(key)) return wdCache.get(key);
 
   try {
-    // 1. Récupérer le QID via l'API Wikipedia
-    const r1 = await fetch(
+    // 1. QID de l'article Wikipedia FR
+    const r1  = await fetch(
       `${MW}?action=query&titles=${encodeURIComponent(page.title)}`
       + `&prop=pageprops&ppprop=wikibase_item&format=json&origin=*`
     );
     const d1  = await r1.json();
     const qid = Object.values(d1.query?.pages || {})[0]?.pageprops?.wikibase_item;
-    if (!qid) { wdCache.set(cacheKey, false); return false; }
 
-    // 2. Récupérer P31 (instance de) depuis Wikidata
-    const r2 = await fetch(
+    // Pas de QID = article Wikidata-less, on accepte plutôt que de bloquer
+    if (!qid) { wdCache.set(key, true); return true; }
+
+    // 2. P31 (instance de) depuis Wikidata
+    const r2     = await fetch(
       `${WD}?action=wbgetclaims&entity=${qid}&property=P31&format=json&origin=*`
     );
     const d2     = await r2.json();
     const claims = d2.claims?.P31 || [];
     const qids   = new Set(claims.map(c => c.mainsnak?.datavalue?.value?.id).filter(Boolean));
 
+    // Pas de P31 = article mal typé, on accepte plutôt que de bloquer
+    if (qids.size === 0) { wdCache.set(key, true); return true; }
+
     let ok = false;
     for (const q of qids) {
       if (types.has(q)) { ok = true; break; }
     }
 
-    wdCache.set(cacheKey, ok);
+    wdCache.set(key, ok);
     return ok;
   } catch {
-    // En cas d'erreur réseau on laisse passer pour ne pas bloquer
+    // Erreur réseau → on laisse passer pour ne jamais bloquer
+    wdCache.set(key, true);
     return true;
   }
 }
@@ -249,6 +248,7 @@ let state = {
   chosenIdx: -1,
   history:   [],
   mode:      'classic',
+  seen:      new Set(), // titres déjà montrés cette session
 };
 
 /* ─────────────────────────────────────────────────────────────
@@ -290,6 +290,7 @@ $modeBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     if (state.mode === btn.dataset.mode) return;
     state.mode = btn.dataset.mode;
+    state.seen.clear();
     $modeBtns.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     loadRound();
@@ -346,10 +347,10 @@ async function fetchRandom() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   FETCH DEPUIS CATÉGORIES
+   FETCH DEPUIS CATÉGORIES — avec validation Wikidata
    ───────────────────────────────────────────────────────────── */
-const MAX_CAT_RETRIES  = 8;
-const MAX_PAGE_RETRIES = 5;
+const MAX_CAT_RETRIES  = 10;
+const MAX_PAGE_RETRIES = 6;
 
 async function fetchFromCategories(categories, mode) {
   for (let catTry = 0; catTry < MAX_CAT_RETRIES; catTry++) {
@@ -360,24 +361,24 @@ async function fetchFromCategories(categories, mode) {
       const r = await fetch(
         `${MW}?action=query&list=categorymembers`
         + `&cmtitle=${encodeURIComponent('Catégorie:' + cat)}`
-        + `&cmlimit=80&cmtype=page&format=json&origin=*`
+        + `&cmlimit=100&cmtype=page&format=json&origin=*`
       );
       const d = await r.json();
       members = d.query?.categorymembers || [];
     } catch { continue; }
 
-    // Filtre rapide sur les titres
-    const filtered = members.filter(m => isTitleOk(m.title));
+    // Filtre rapide + dédup session
+    const filtered = members.filter(m =>
+      isTitleOk(m.title) && !state.seen.has(m.title)
+    );
     if (filtered.length === 0) continue;
 
-    // Mélange aléatoire
     const shuffled = [...filtered].sort(() => Math.random() - 0.5);
 
     for (let i = 0; i < Math.min(MAX_PAGE_RETRIES, shuffled.length); i++) {
       const page = await fetchSummaryByTitle(shuffled[i].title);
-      if (!page || !isPageOk(page)) continue;
+      if (!page || !isPageOk(page) || state.seen.has(page.title)) continue;
 
-      // Validation Wikidata — détermine si c'est vraiment le bon type
       const valid = await wikidataValidate(page, mode);
       if (valid) return page;
     }
@@ -386,44 +387,39 @@ async function fetchFromCategories(categories, mode) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   FETCH UN BON ARTICLE pour le mode courant
+   FETCH LA PAIRE — deux articles différents en parallèle
    ───────────────────────────────────────────────────────────── */
-const MAX_SLOT_RETRIES = 6;
-
-async function fetchOneGoodPage(mode) {
+async function fetchOneGoodPage(mode, exclude = null) {
   const modeConf = MODES[mode];
+  const MAX = 8;
 
-  for (let i = 0; i < MAX_SLOT_RETRIES; i++) {
+  for (let i = 0; i < MAX; i++) {
     let page;
 
     if (mode === 'classic') {
       page = await fetchRandom();
-      if (page && isPageOk(page)) return page;
+      if (!page || !isPageOk(page)) continue;
     } else {
       page = await fetchFromCategories(modeConf.categories, mode);
-      if (page) return page;
     }
+
+    if (!page) continue;
+    // Pas le même que l'autre carte
+    if (exclude && page.title === exclude) continue;
+    // Pas déjà vu cette session
+    if (state.seen.has(page.title)) continue;
+
+    return page;
   }
 
-  return fallbackPage();
+  return null; // on n'affiche rien plutôt qu'un fallback trompeur
 }
 
 async function fetchPair() {
-  const [a, b] = await Promise.all([
-    fetchOneGoodPage(state.mode),
-    fetchOneGoodPage(state.mode),
-  ]);
+  // On fetch A d'abord, puis B en excluant le titre de A
+  const a = await fetchOneGoodPage(state.mode);
+  const b = await fetchOneGoodPage(state.mode, a?.title ?? null);
   return [a, b];
-}
-
-function fallbackPage() {
-  return {
-    title:       'Article indisponible',
-    description: '',
-    extract:     '.',
-    image:       null,
-    url:         `https://${LANG}.wikipedia.org`,
-  };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -434,7 +430,24 @@ async function loadRound() {
   state.chosenIdx = -1;
   showLoader(true);
   $btnNext.disabled = true;
-  state.pages = await fetchPair();
+
+  const [a, b] = await fetchPair();
+
+  // On enregistre les titres dans "seen" seulement si valides
+  if (a?.title) state.seen.add(a.title);
+  if (b?.title) state.seen.add(b.title);
+
+  // Si seen devient énorme (> 300), on vide la moitié pour éviter de saturer
+  if (state.seen.size > 300) {
+    const arr = [...state.seen];
+    state.seen = new Set(arr.slice(arr.length / 2));
+  }
+
+  state.pages = [
+    a ?? fallbackPage(),
+    b ?? fallbackPage(),
+  ];
+
   showLoader(false);
   renderArena();
 }
@@ -555,6 +568,7 @@ $btnNext.addEventListener('click', () => { if (state.chosen) loadRound(); });
 
 $btnReset.addEventListener('click', () => {
   state.history = [];
+  state.seen.clear();
   wdCache.clear();
   $histCount.textContent = '0 choix';
   $histList.innerHTML    = '';
@@ -572,6 +586,16 @@ document.addEventListener('keydown', e => {
 /* ─────────────────────────────────────────────────────────────
    HELPERS
    ───────────────────────────────────────────────────────────── */
+function fallbackPage() {
+  return {
+    title:       'Article indisponible',
+    description: '',
+    extract:     '.',
+    image:       null,
+    url:         `https://${LANG}.wikipedia.org`,
+  };
+}
+
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
