@@ -17,31 +17,106 @@ const MW   = `https://${LANG}.wikipedia.org/w/api.php`;
 const MODES = {
   classic: {
     label: '🎲 Classique',
-    fetch: () => Promise.all([fetchRandom(), fetchRandom()]),
   },
   animals: {
     label: '🐾 Animaux',
+    // Catégories d'espèces animales nommées — pas de catégories génériques
+    // qui contiennent des musées, associations, etc.
     categories: [
-      'Mammifère', 'Félins', 'Canidés', 'Primates', 'Cétacés',
-      'Oiseaux_de_proie', 'Reptile', 'Amphibiens', 'Requins',
-      'Insecte', 'Araignée', 'Serpent', 'Poissons', 'Ours',
-      'Cervidés', 'Bovins', 'Équidés', 'Pingouins_et_manchots',
+      // Mammifères
+      'Lion', 'Tigre', 'Léopard', 'Guépard', 'Jaguar',
+      'Loup', 'Renard', 'Ours_brun', 'Ours_polaire', 'Panda_géant',
+      'Éléphant_d\'Afrique', 'Éléphant_d\'Asie',
+      'Girafe', 'Hippopotame', 'Rhinocéros',
+      'Gorille', 'Chimpanzé', 'Orang-outan', 'Babouin',
+      'Dauphin', 'Orque', 'Baleine_bleue', 'Cachalot',
+      'Zèbre', 'Cheval', 'Âne',
+      'Cerf_élaphe', 'Renne', 'Élan',
+      'Lama', 'Alpaga', 'Chameau', 'Dromadaire',
+      'Kangourou', 'Koala', 'Wombat', 'Wallaby',
+      'Lynx', 'Puma', 'Coyote', 'Hyène',
+      'Phoque', 'Morse', 'Lion_de_mer',
+      // Oiseaux
+      'Aigle_royal', 'Condor_des_Andes', 'Faucon_pèlerin',
+      'Manchot_empereur', 'Autruche', 'Flamant_rose',
+      'Perroquet', 'Toucan', 'Colibri',
+      'Hibou_grand-duc', 'Cigogne_blanche',
+      // Reptiles nommés
+      'Crocodile_du_Nil', 'Anaconda', 'Python_réticulé',
+      'Tortue_géante_des_Galápagos', 'Varan_de_Komodo',
+      'Caméléon', 'Gecko',
+      // Poissons & marins
+      'Grand_requin_blanc', 'Requin_baleine',
+      'Pieuvre', 'Méduse', 'Étoile_de_mer',
+      'Hippocampe', 'Poisson_clown',
+      // Insectes / arthropodes nommés
+      'Papillon_monarque', 'Abeille_mellifère', 'Mante_religieuse',
+      'Scarabée', 'Coccinelle',
     ],
+    // Filtre supplémentaire : la description doit évoquer un être vivant
+    extraFilter: page => {
+      const text = (page.description + ' ' + page.extract).toLowerCase();
+      const animalWords = [
+        'espèce', 'animal', 'mammifère', 'oiseau', 'reptile', 'poisson',
+        'insecte', 'amphibien', 'carnivore', 'herbivore', 'primate',
+        'félin', 'canidé', 'cétacé', 'requin', 'serpent', 'lézard',
+        'araignée', 'papillon', 'abeille', 'genre', 'famille', 'ordre',
+        'vertébré', 'invertébré', 'rongeur', 'rapace', 'passereau',
+      ];
+      return animalWords.some(w => text.includes(w));
+    },
   },
   places: {
     label: '🌍 Lieux',
+    // Uniquement des catégories de lieux NOMMÉS et spécifiques
     categories: [
-      'Capitale', 'Ville_de_France',
-      'Île', 'Île_de_France_(région)',
-      'Montagne', 'Sommet_des_Alpes', 'Sommet_des_Pyrénées',
-      'Lac', 'Fleuve', 'Rivière_de_France',
-      'Désert', 'Forêt', 'Parc_national',
-      'Pays_d\'Europe', 'Pays_d\'Afrique', 'Pays_d\'Asie',
-      'Pays_d\'Amérique', 'Pays_d\'Océanie',
+      // Villes & capitales
+      'Capitale_en_Europe', 'Capitale_en_Afrique',
+      'Capitale_en_Asie', 'Capitale_en_Amérique',
+      'Ville_de_plus_de_100_000_habitants_en_France',
+      'Commune_de_Paris',
+      // Îles nommées
+      'Île_de_la_Méditerranée', 'Île_de_l\'Atlantique',
+      'Île_du_Pacifique', 'Île_de_l\'océan_Indien',
+      // Montagnes nommées
+      'Sommet_des_Alpes', 'Sommet_des_Pyrénées',
+      'Sommet_de_l\'Himalaya', 'Sommet_des_Andes',
+      'Volcan_actif',
+      // Cours d\'eau nommés
+      'Fleuve_d\'Europe', 'Fleuve_d\'Afrique',
+      'Fleuve_d\'Asie', 'Fleuve_d\'Amérique',
+      'Lac_d\'Europe', 'Lac_d\'Afrique', 'Lac_d\'Amérique',
+      // Pays
+      'Pays_d\'Europe', 'Pays_d\'Afrique',
+      'Pays_d\'Asie', 'Pays_d\'Amérique',
+      'Pays_d\'Océanie',
+      // Régions administratives
       'Région_française', 'Département_français',
-      'Mer', 'Océan', 'Golfe', 'Cap',
-      'Volcan', 'Grotte',
+      'Province_du_Canada', 'État_des_États-Unis',
+      // Parcs & sites naturels
+      'Parc_national_en_France', 'Parc_national_en_Afrique',
+      'Parc_national_aux_États-Unis',
+      'Site_du_patrimoine_mondial_en_France',
+      // Mers & océans
+      'Mer', 'Détroit',
+      // Grottes & canyon
+      'Grotte_en_France', 'Canyon',
     ],
+    // Filtre : titre doit ressembler à un nom propre (contient une majuscule non initiale
+    // OU description évoque un lieu géographique)
+    extraFilter: page => {
+      // Rejette les pages dont le titre est un nom commun simple (1 mot, tout en minuscules sauf 1ère lettre)
+      if (/^[A-ZÀÂÉÈÊÙÛÎÏÔŒÆÇ][a-zàâéèêùûîïôœæç]+$/.test(page.title)) {
+        // Un seul mot au style "Désert", "Forêt", "Mer" → concept générique probable
+        // On accepte si la description mentionne un lieu précis
+        const desc = page.description.toLowerCase();
+        const placeWords = ['situé', 'située', 'en france', 'en afrique', 'en asie',
+          'dans le', 'dans la', 'au ', 'département', 'commune', 'ville', 'île',
+          'fleuve', 'lac', 'montagne', 'volcan', 'pays', 'région', 'province'];
+        return placeWords.some(w => desc.includes(w));
+      }
+      return true;
+    },
   },
   people: {
     label: '👤 Personnages',
@@ -49,19 +124,42 @@ const MODES = {
       'Acteur_français', 'Actrice_française',
       'Acteur_américain', 'Actrice_américaine',
       'Chanteur_français', 'Chanteuse_française',
+      'Chanteur_américain', 'Chanteuse_américaine',
       'Footballeur_français', 'Footballeuse_française',
+      'Footballeur_espagnol', 'Footballeur_brésilien',
       'Tennisman_français', 'Tenniswoman_française',
-      'Nageur_français',
+      'Nageur_français', 'Cycliste_français',
+      'Boxeur_français', 'Judoka_français',
       'Politicien_français', 'Femme_politique_française',
+      'Président_de_la_République_française',
       'Peintre_français', 'Sculpteur_français',
       'Réalisateur_français', 'Réalisatrice_française',
-      'Écrivain_français', 'Romancière_française',
+      'Réalisateur_américain', 'Réalisatrice_américaine',
+      'Écrivain_français', 'Romancier_français',
       'Physicien_français', 'Mathématicien_français',
-      'Cuisinier_français',
-      'Joueur_de_tennis_de_table_français',
-      'Coureur_cycliste_français',
-      'Boxeur_français',
+      'Biologiste_français', 'Médecin_français',
+      'Cuisinier_français', 'Chef_cuisinier_français',
+      'Musicien_français', 'Compositeur_français',
+      'Philosophe_français',
+      'Architecte_français',
+      'Photographe_français',
     ],
+    // Filtre : la description doit indiquer une personne (né, mort, nationalité…)
+    extraFilter: page => {
+      const desc = page.description.toLowerCase();
+      const personWords = [
+        'né', 'née', 'mort', 'morte', 'décédé', 'décédée',
+        'français', 'française', 'américain', 'américaine',
+        'acteur', 'actrice', 'chanteur', 'chanteuse',
+        'footballeur', 'joueur', 'joueuse', 'réalisateur', 'réalisatrice',
+        'écrivain', 'romancier', 'peintre', 'sculpteur', 'musicien',
+        'politicien', 'homme politique', 'femme politique',
+        'physicien', 'mathématicien', 'biologiste', 'médecin',
+        'chef', 'cuisinier', 'architecte', 'photographe',
+        'philosophe', 'compositeur', 'nageur',
+      ];
+      return personWords.some(w => desc.includes(w));
+    },
   },
 };
 
@@ -96,8 +194,12 @@ const BAD_DESCRIPTION_PATTERNS = [
   /page d.homonymie/i,
 ];
 
-/** Vérifie qu'une page est acceptable */
-function isGoodPage(page) {
+/**
+ * Vérifie qu'une page est acceptable.
+ * @param {object} page
+ * @param {function|null} extraFilter  Filtre supplémentaire lié au mode
+ */
+function isGoodPage(page, extraFilter = null) {
   if (!page || !page.title) return false;
 
   // Titre
@@ -117,6 +219,9 @@ function isGoodPage(page) {
 
   // Extract trop court = stub
   if (!page.extract || page.extract.length < MIN_EXTRACT_LEN) return false;
+
+  // Filtre spécifique au mode
+  if (extraFilter && !extraFilter(page)) return false;
 
   return true;
 }
@@ -231,7 +336,7 @@ async function fetchRandom() {
 const MAX_CAT_RETRIES = 6;
 const MAX_PAGE_RETRIES = 4;
 
-async function fetchFromCategories(categories) {
+async function fetchFromCategories(categories, extraFilter = null) {
   for (let catTry = 0; catTry < MAX_CAT_RETRIES; catTry++) {
     const cat = categories[Math.floor(Math.random() * categories.length)];
 
@@ -265,7 +370,7 @@ async function fetchFromCategories(categories) {
     const shuffled = [...filtered].sort(() => Math.random() - 0.5);
     for (let i = 0; i < Math.min(MAX_PAGE_RETRIES, shuffled.length); i++) {
       const page = await fetchSummaryByTitle(shuffled[i].title);
-      if (page && isGoodPage(page)) return page;
+      if (page && isGoodPage(page, extraFilter)) return page;
     }
   }
   return null;
@@ -279,7 +384,8 @@ async function fetchFromCategories(categories) {
 const MAX_SLOT_RETRIES = 8;
 
 async function fetchOneGoodPage(mode) {
-  const modeConf = MODES[mode];
+  const modeConf  = MODES[mode];
+  const extraFilter = modeConf.extraFilter || null;
 
   for (let i = 0; i < MAX_SLOT_RETRIES; i++) {
     let page;
@@ -287,10 +393,10 @@ async function fetchOneGoodPage(mode) {
     if (mode === 'classic') {
       page = await fetchRandom();
     } else {
-      page = await fetchFromCategories(modeConf.categories);
+      page = await fetchFromCategories(modeConf.categories, extraFilter);
     }
 
-    if (page && isGoodPage(page)) return page;
+    if (page && isGoodPage(page, extraFilter)) return page;
   }
 
   return fallbackPage();
