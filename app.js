@@ -15,10 +15,15 @@ const WD   = 'https://www.wikidata.org/w/api.php';
    ───────────────────────────────────────────────────────────── */
 const WD_TYPES = {
   animals: new Set([
+    'Q16521',    // taxon
     'Q729',      // animal
     'Q7432',     // espèce
+    'Q38829',    // genre biologique
+    'Q23038290', // taxon fossile
     'Q310890',   // sous-espèce
+    'Q68947',    // sous-genre
     'Q4886',     // race (animale)
+    'Q42292',    // variété biologique
   ]),
   places: new Set([
     'Q515',      // ville
